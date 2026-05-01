@@ -56,7 +56,6 @@ header {
 h1 {
     font-size: 2rem;
     color: var(--blush-pop);
-    text-shadow: 2px 2px 0px var(--pastel-petal);
 }
 
 button {
