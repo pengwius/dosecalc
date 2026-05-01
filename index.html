@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Dosecalc ✨</title>
+        <link rel="icon" type="image/png" href="favicon.png" />
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <header>
+            <h1>Dosecalc 🌸</h1>
+            <button id="themeToggle" aria-label="Toggle theme">🌙 / ☀️</button>
+        </header>
+        <main>
+            <section class="card" id="card-syringe">
+                <h2>Syringe</h2>
+                <div class="input-group" style="margin-bottom: 20px">
+                    <label for="syringePreset">Syringe Type (Preset)</label>
+                    <select id="syringePreset">
+                        <option value="custom">Custom</option>
+                        <option value="30,0.3">U30 - 30U / 0.3mL</option>
+                        <option value="40,1">U40 - 40U / 1mL</option>
+                        <option value="50,0.5">U50 - 50U / 0.5mL</option>
+                        <option value="100,1">U100 - 100U / 1mL</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="syringeUnits">Units (U)</label>
+                        <input
+                            type="number"
+                            id="syringeUnits"
+                            value="40"
+                            min="1"
+                        />
+                    </div>
+                    <div class="input-group">
+                        <label for="syringeMl">Capacity (ml)</label>
+                        <input
+                            type="number"
+                            id="syringeMl"
+                            value="1"
+                            min="0.1"
+                            step="0.1"
+                        />
+                    </div>
+                </div>
+            </section>
+
+            <section class="card" id="card-vial">
+                <h2>Vial</h2>
+                <div class="input-group" style="margin-bottom: 20px">
+                    <label for="vialPreset">Concentration (Preset)</label>
+                    <select id="vialPreset">
+                        <option value="custom">Custom</option>
+                        <option value="40,mg,1">40 mg / 1 ml</option>
+                        <option value="50,mg,1">50 mg / 1 ml</option>
+                        <option value="80,mg,1">80 mg / 1 ml</option>
+                        <option value="100,mg,1">100 mg / 1 ml</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="concentrationAmount">Concentration</label>
+                        <input
+                            type="number"
+                            id="concentrationAmount"
+                            value="40"
+                            min="0.1"
+                            step="0.1"
+                        />
+                    </div>
+                    <div class="input-group">
+                        <label for="concentrationUnit">Unit</label>
+                        <select id="concentrationUnit">
+                            <option value="mg">mg</option>
+                            <option value="mcg">mcg</option>
+                            <option value="g">g</option>
+                        </select>
+                    </div>
+                    <span class="separator">/</span>
+                    <div class="input-group">
+                        <label for="concentrationVolume">per (ml)</label>
+                        <input
+                            type="number"
+                            id="concentrationVolume"
+                            value="1"
+                            min="0.1"
+                            step="0.1"
+                        />
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="vialVolume"
+                        >Amount of liquid in vial (ml) - optional</label
+                    >
+                    <input type="number" id="vialVolume" min="0.1" step="0.1" />
+                </div>
+            </section>
+
+            <section class="card" id="card-dosage">
+                <h2>Dosage</h2>
+                <div class="input-row" style="margin-bottom: 16px">
+                    <div class="input-group">
+                        <label for="doseAmount"
+                            >Inject (<span id="doseUnitLabel">mg</span>)</label
+                        >
+                        <input
+                            type="number"
+                            id="doseAmount"
+                            min="0"
+                            step="0.1"
+                        />
+                    </div>
+                    <span
+                        class="separator"
+                        style="font-size: 1rem; padding-bottom: 14px"
+                        >OR</span
+                    >
+                    <div class="input-group">
+                        <label for="doseVolume">Inject (ml)</label>
+                        <input
+                            type="number"
+                            id="doseVolume"
+                            min="0"
+                            step="0.01"
+                        />
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="frequency"
+                        >Injection frequency in days (optional)</label
+                    >
+                    <input type="number" id="frequency" min="1" step="1" />
+                </div>
+            </section>
+
+            <section class="results card" id="card-result">
+                <h2>Result 🎀</h2>
+                <div class="result-highlight">
+                    To inject: <strong id="resultUnits">0</strong>
+                    <span class="unit">U</span>
+                </div>
+                <p id="vialLife" class="vial-life"></p>
+
+                <div class="syringe-visual-container">
+                    <div class="syringe-wrapper">
+                        <div class="syringe-plunger" id="syringePlunger"></div>
+                        <div class="syringe-barrel" id="syringeBarrel">
+                            <div
+                                class="syringe-liquid"
+                                id="syringeLiquid"
+                            ></div>
+                            <div class="syringe-scale" id="syringeScale"></div>
+                        </div>
+                        <div class="syringe-needle"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <footer>
+            <div class="footer-content">
+                <p>
+                    Made by
+                    <a
+                        href="https://github.com/pengwius"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >pengwius</a
+                    >
+                    with ❤️
+                </p>
+                <div class="attribution">
+                    Icons made by
+                    <a
+                        href="https://www.flaticon.com/authors/candy-design"
+                        title="Candy Design"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >Candy Design</a
+                    >
+                    from
+                    <a
+                        href="https://www.flaticon.com/"
+                        title="Flaticon"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >www.flaticon.com</a
+                    >
+                </div>
+            </div>
+        </footer>
+        <script src="script.js"></script>
+    </body>
+</html>
