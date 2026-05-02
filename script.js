@@ -163,6 +163,7 @@ class App {
       vialLife: document.getElementById("vialLife"),
       syringePreset: document.getElementById("syringePreset"),
       vialPreset: document.getElementById("vialPreset"),
+      resetBtn: document.getElementById("resetBtn"),
     };
 
     this.syringeRenderer = new SyringeRenderer(
@@ -274,6 +275,12 @@ class App {
       const val = parseFloat(e.target.value);
       this.state.doseVolume = isNaN(val) ? null : val;
       this.state.lastEditedDose = "volume";
+      this.update();
+    });
+
+    this.elements.resetBtn.addEventListener("click", () => {
+      this.state = new State();
+      this.syncDomFromState();
       this.update();
     });
   }

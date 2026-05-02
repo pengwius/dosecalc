@@ -136,28 +136,70 @@
                 </div>
             </section>
 
-            <section class="results card" id="card-result">
-                <h2>Result 🎀</h2>
-                <div class="result-highlight">
-                    To inject: <strong id="resultUnits">0</strong>
-                    <span class="unit">U</span>
-                </div>
-                <p id="vialLife" class="vial-life"></p>
-
-                <div class="syringe-visual-container">
-                    <div class="syringe-wrapper">
-                        <div class="syringe-plunger" id="syringePlunger"></div>
-                        <div class="syringe-barrel" id="syringeBarrel">
-                            <div
-                                class="syringe-liquid"
-                                id="syringeLiquid"
-                            ></div>
-                            <div class="syringe-scale" id="syringeScale"></div>
-                        </div>
-                        <div class="syringe-needle"></div>
+            <style>
+                #right-panel {
+                    grid-column: 2;
+                    grid-row: 1 / span 3;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+                    position: sticky;
+                    top: 24px;
+                }
+                @media (max-width: 768px) {
+                    #right-panel {
+                        grid-column: 1;
+                        grid-row: auto;
+                        position: static;
+                    }
+                }
+            </style>
+            <div id="right-panel">
+                <section
+                    class="results card"
+                    id="card-result"
+                    style="
+                        position: static;
+                        flex: 1;
+                        margin: 0;
+                        justify-content: center;
+                    "
+                >
+                    <h2>Result 🎀</h2>
+                    <div class="result-highlight">
+                        To inject: <strong id="resultUnits">0</strong>
+                        <span class="unit">U</span>
                     </div>
-                </div>
-            </section>
+                    <p id="vialLife" class="vial-life"></p>
+
+                    <div class="syringe-visual-container">
+                        <div class="syringe-wrapper">
+                            <div
+                                class="syringe-plunger"
+                                id="syringePlunger"
+                            ></div>
+                            <div class="syringe-barrel" id="syringeBarrel">
+                                <div
+                                    class="syringe-liquid"
+                                    id="syringeLiquid"
+                                ></div>
+                                <div
+                                    class="syringe-scale"
+                                    id="syringeScale"
+                                ></div>
+                            </div>
+                            <div class="syringe-needle"></div>
+                        </div>
+                    </div>
+                </section>
+                <button
+                    id="resetBtn"
+                    aria-label="Reset defaults"
+                    style="width: 100%; padding: 16px; font-weight: bold"
+                >
+                    🔄 Reset Calculator
+                </button>
+            </div>
         </main>
         <footer>
             <div class="footer-content">
