@@ -108,34 +108,21 @@ class SyringeRenderer {
 }
 
 class ThemeManager {
-  constructor(toggleBtn) {
-    this.btn = toggleBtn;
-
-    const savedTheme = localStorage.getItem("dosecalcTheme");
-    if (savedTheme) {
-      this.isDark = savedTheme === "dark";
-    } else {
-      this.isDark =
-        window.matchMedia &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches;
-    }
-
+  constructor(btn) {
+    this.btn = btn;
+    this.isDark = localStorage.getItem("dosecalcTheme") === "dark";
     this.applyTheme();
-    this.btn.addEventListener("click", () => this.toggle());
+    this.btn.addEventListener("click", () => {
+      this.isDark = !this.isDark;
+      this.applyTheme();
+    });
   }
-
   applyTheme() {
-    if (this.isDark) {
+    if (this.isDark)
       document.documentElement.setAttribute("data-theme", "dark");
-    } else {
-      document.documentElement.removeAttribute("data-theme");
-    }
+    else document.documentElement.removeAttribute("data-theme");
+    this.btn.textContent = this.isDark ? "☀️" : "🌙";
     localStorage.setItem("dosecalcTheme", this.isDark ? "dark" : "light");
-  }
-
-  toggle() {
-    this.isDark = !this.isDark;
-    this.applyTheme();
   }
 }
 
