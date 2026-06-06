@@ -534,36 +534,56 @@ footer a:hover {
 @media (max-width: 768px) {
   main {
     grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 8px;
   }
-  #card-syringe,
-  #card-vial,
-  #card-dosage,
-  #card-result {
-    grid-column: 1;
-    grid-row: auto;
-    position: static;
+  
+  .card {
+    padding: 12px;
+    border-radius: 12px;
   }
+
   .input-row {
     flex-direction: column;
     align-items: stretch;
+    gap: 4px;
+    margin-bottom: 4px;
   }
-  .separator {
-    display: none;
+  
+  .input-group {
+    margin-bottom: 0 !important;
   }
-  .syringe-wrapper {
-    height: auto;
-    min-height: 100px;
+
+  label {
+    margin-bottom: 2px !important;
   }
-  input,
-  select {
-    max-width: 100%;
+
+  .chart-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .chart-block {
     height: 240px;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px;
+    padding-bottom: 25px; /* Dodatkowe miejsce na etykiety osi */
+  }
+  
+  .chart-block canvas {
+    height: 100% !important;
+    width: 600px !important; /* Wymuszona szerokość, aby nie zwężać wykresu */
   }
 
-  .custom-dose-row {
-    grid-template-columns: 1fr;
+  .separator {
+    display: none;
+  }
+
+  .syringe-wrapper {
+    height: auto;
+    min-height: 80px;
   }
 }
