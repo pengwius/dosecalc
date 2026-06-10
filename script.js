@@ -70,7 +70,7 @@ class SyringeRenderer {
     this.liquid.style.width = `${percentage}%`;
 
     const plungerRightOffset = percentage;
-    this.plunger.style.left = `calc(${100 - plungerRightOffset}% - 30px)`;
+    this.plunger.style.left = `calc(${100 - plungerRightOffset}% - ${(100 - plungerRightOffset) / 100 * 12}px)`;
 
     this.scale.innerHTML = "";
 
@@ -272,6 +272,79 @@ class App {
     });
   }
 
+  showError(inputEl, message) {
+    this.clearError(inputEl);
+    if (!message) return;
+
+    inputEl.classList.add("input-error");
+
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "input-error-message";
+    errorDiv.textContent = message;
+
+    inputEl.parentNode.appendChild(errorDiv);
+  }
+
+  clearError(inputEl) {
+    inputEl.classList.remove("input-error");
+    const existing = inputEl.parentNode.querySelector(".input-error-message");
+    if (existing) {
+      existing.remove();
+    }
+  }
+
+  validateInputs() {
+    let hasError = false;
+
+    const checkPositive = (element, value, allowZero = false) => {
+      this.clearError(element);
+      if (value === null || isNaN(value)) return;
+      if (value < 0) {
+        this.showError(element, "Value cannot be negative");
+        hasError = true;
+      } else if (!allowZero && value === 0) {
+        this.showError(element, "Value must be greater than 0");
+        hasError = true;
+      }
+    };
+
+    checkPositive(this.elements.syringeUnits, this.state.syringeUnits);
+    checkPositive(this.elements.syringeMl, this.state.syringeMl);
+    checkPositive(this.elements.concAmount, this.state.concAmount);
+    checkPositive(this.elements.concVol, this.state.concVol);
+    checkPositive(this.elements.vialVol, this.state.vialVol, true);
+    checkPositive(this.elements.freq, this.state.freq, true);
+
+    this.clearError(this.elements.doseAmount);
+    this.clearError(this.elements.doseVolume);
+
+    checkPositive(this.elements.doseAmount, this.state.doseAmount, true);
+    checkPositive(this.elements.doseVolume, this.state.doseVolume, true);
+
+    if (!hasError && this.state.syringeMl > 0) {
+      const maxVolume = this.state.syringeMl;
+      const currentVolume = this.state.doseVolume;
+
+      if (currentVolume > maxVolume) {
+        const maxAmount = maxVolume * (this.state.concAmount / this.state.concVol);
+        if (this.state.lastEditedDose === "amount") {
+          this.showError(
+            this.elements.doseAmount,
+            `Exceeds syringe capacity (max ${Number(maxAmount.toFixed(2))} ${this.state.concUnit || 'mg'})`
+          );
+        } else {
+          this.showError(
+            this.elements.doseVolume,
+            `Exceeds syringe capacity (max ${maxVolume} ml)`
+          );
+        }
+        hasError = true;
+      }
+    }
+
+    return hasError;
+  }
+
   update() {
     if (
       this.state.lastEditedDose === "amount" &&
@@ -283,9 +356,9 @@ class App {
         this.state.concVol,
       );
       if (document.activeElement !== this.elements.doseVolume) {
-        this.elements.doseVolume.value = Number(
-          this.state.doseVolume.toFixed(3),
-        );
+        this.elements.doseVolume.value = this.state.doseVolume !== null && !isNaN(this.state.doseVolume)
+          ? Number(this.state.doseVolume.toFixed(3))
+          : "";
       }
     } else if (
       this.state.lastEditedDose === "volume" &&
@@ -297,9 +370,9 @@ class App {
         this.state.concVol,
       );
       if (document.activeElement !== this.elements.doseAmount) {
-        this.elements.doseAmount.value = Number(
-          this.state.doseAmount.toFixed(3),
-        );
+        this.elements.doseAmount.value = this.state.doseAmount !== null && !isNaN(this.state.doseAmount)
+          ? Number(this.state.doseAmount.toFixed(3))
+          : "";
       }
     } else if (
       this.state.doseAmount === null &&
@@ -309,21 +382,27 @@ class App {
       this.elements.doseVolume.value = "";
     }
 
-    const units = Calculator.calculateUnits(
-      this.state.doseVolume,
-      this.state.syringeUnits,
-      this.state.syringeMl,
-    );
+    const hasError = this.validateInputs();
+
+    let units = 0;
+    let life = null;
+
+    if (!hasError) {
+      units = Calculator.calculateUnits(
+        this.state.doseVolume,
+        this.state.syringeUnits,
+        this.state.syringeMl,
+      );
+      life = Calculator.calculateVialLife(
+        this.state.vialVol,
+        this.state.doseVolume,
+        this.state.freq,
+      );
+    }
 
     this.elements.resultUnits.textContent = units
       ? Number(units.toFixed(2))
       : "0";
-
-    const life = Calculator.calculateVialLife(
-      this.state.vialVol,
-      this.state.doseVolume,
-      this.state.freq,
-    );
 
     if (life) {
       let timeString = `${life} days`;
