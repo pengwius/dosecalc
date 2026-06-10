@@ -140,9 +140,16 @@ header > a {
   grid-row: 1 / span 3;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
   position: sticky;
   top: 24px;
+  gap: 16px;
+}
+
+#card-result h2 {
+  margin-top: 12px;
+  margin-bottom: 0;
 }
 
 .card {
@@ -182,6 +189,11 @@ h2 {
   padding-bottom: 10px;
   font-size: 1.5rem;
   color: var(--pink-orchid);
+}
+
+.separator-or {
+  font-size: 1rem;
+  padding-bottom: 14px;
 }
 
 label {
@@ -366,13 +378,22 @@ select:focus {
 }
 
 .result-highlight {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   font-size: 1.5rem;
-  margin: 16px 0;
-  padding: 16px;
+  margin: 0;
+  padding: 12px 24px;
   background: var(--icy-blue);
   color: #2b2533;
   border-radius: 16px;
   font-weight: bold;
+}
+
+.result-highlight span {
+  position: relative;
+  top: -2px;
 }
 
 .result-highlight strong {
@@ -383,53 +404,103 @@ select:focus {
 
 .vial-life {
   font-size: 1.1rem;
-  margin-bottom: 24px;
+  margin: 0;
   color: var(--pink-orchid);
   font-weight: bold;
   min-height: 1.5rem;
 }
 
+@media(max-width: 768px) {
+  .vial-life {
+    margin-bottom: 16px;
+  }
+}
+
+#card-result > h2 {
+  margin-top: 48px;
+}
+
+@media(max-width: 768px) {
+  #card-result > h2 {
+    margin-top: 12px;
+  }
+}
+
 .syringe-visual-container {
-  margin-top: 30px;
+  width: 100%;
+  margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px 0;
+  padding: 10px 0;
+  rotate: -90deg;
+  height: 120%;
+  margin-top: -48px;
+}
+
+@media(max-width: 768px) {
+  .syringe-visual-container {
+    rotate: 0deg;
+    transform: translateX(14px);
+    margin-top: 0;
+    margin-bottom: -24px;
+  }
 }
 
 .syringe-wrapper {
   display: flex;
   align-items: center;
-  width: 100%;
-  max-width: 400px;
-  height: 80px;
+  width: calc(100% - 60px);
+  max-width: 320px;
+  height: 220px;
   position: relative;
+  margin-left: 0;
+  transform: translateX(12px);
+  transform: scale(1.4);
+}
+
+@media (max-width: 768px) {
+  .syringe-wrapper {
+    margin-bottom: 40px;
+    transform: scale(1.2);
+  }
 }
 
 .syringe-plunger {
-  width: 40px;
-  height: 24px;
-  background: var(--sky-blue);
-  border-radius: 12px 0 0 12px;
-  border: 2px solid var(--text-color);
-  border-right: none;
+  width: 12px;
+  height: 100%;
+  background: #3a3a3a;
+  border-radius: 2px;
   position: absolute;
-  left: 0;
-  z-index: 1;
+  top: 0;
+  z-index: 4;
   transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.syringe-plunger::before {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 80px;
+  height: 6px;
+  background: var(--sky-blue);
+  border: 1px solid var(--text-color);
+  z-index: -1;
 }
 
 .syringe-plunger::after {
   content: "";
   position: absolute;
-  right: 0;
+  left: -86px;
   top: 50%;
   transform: translateY(-50%);
-  width: 100%;
-  height: 10px;
+  width: 6px;
+  height: 30px;
   background: var(--sky-blue);
-  border-top: 2px solid var(--text-color);
-  border-bottom: 2px solid var(--text-color);
+  border: 2px solid var(--text-color);
+  border-radius: 3px;
 }
 
 .syringe-barrel {
@@ -438,8 +509,7 @@ select:focus {
   border: 3px solid var(--text-color);
   border-radius: 6px;
   position: relative;
-  margin-left: 30px;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.3);
   z-index: 2;
 }
 
@@ -465,27 +535,29 @@ select:focus {
 }
 
 .tick {
-  height: 50%;
-  width: 2px;
+  height: 6px;
+  width: 1.5px;
   background-color: var(--text-color);
   position: absolute;
   top: 0;
+  opacity: 0.6;
 }
 
 .tick.major {
-  height: 100%;
+  height: 10px;
+  opacity: 0.9;
 }
 
 .tick.major::after {
   content: attr(data-value);
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: bold;
   color: var(--text-color);
-  margin-top: 4px;
+  margin-bottom: 4px;
 }
 
 .syringe-needle {
@@ -531,31 +603,79 @@ footer a:hover {
   opacity: 0.7;
 }
 
+.input-error-message {
+  color: #ff6b6b;
+  font-size: 0.82rem;
+  margin-top: 4px;
+  font-weight: bold;
+}
+
+[data-theme="dark"] .input-error-message {
+  color: #ff8787;
+}
+
+input.input-error,
+select.input-error {
+  border-color: #ff6b6b !important;
+}
+
+[data-theme="dark"] input.input-error,
+[data-theme="dark"] select.input-error {
+  border-color: #ff8787 !important;
+}
+
 @media (max-width: 768px) {
+  body {
+    padding: 12px;
+  }
+
   main {
     grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 8px;
+    gap: 12px;
+    padding: 0;
   }
-  
+
+  .simulator-layout {
+    gap: 12px;
+  }
+
   .card {
     padding: 12px;
     border-radius: 12px;
   }
 
-  .input-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 4px;
-    margin-bottom: 4px;
+  .protocol-card {
+    padding: 12px;
+    border-radius: 14px;
   }
-  
+
+  .input-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 8px 12px;
+    margin-bottom: 12px !important;
+  }
+
+  .input-row .input-group {
+    margin-bottom: 0;
+    flex: 1 1 120px;
+  }
+
   .input-group {
-    margin-bottom: 0 !important;
+    margin-bottom: 12px;
   }
 
   label {
-    margin-bottom: 2px !important;
+    margin-bottom: 4px !important;
+  }
+
+  input,
+  select {
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 0.95rem;
   }
 
   .chart-grid {
@@ -570,20 +690,31 @@ footer a:hover {
     overflow-x: auto;
     overflow-y: hidden;
     padding: 10px;
-    padding-bottom: 25px; /* Dodatkowe miejsce na etykiety osi */
+    padding-bottom: 25px;
   }
   
   .chart-block canvas {
     height: 100% !important;
-    width: 600px !important; /* Wymuszona szerokość, aby nie zwężać wykresu */
+    width: 600px !important;
   }
 
   .separator {
     display: none;
   }
 
+  .separator-or {
+    display: inline-block;
+    align-self: flex-end;
+    padding-bottom: 10px;
+    margin: 4px 8px;
+    font-size: 0.9rem;
+    font-weight: bold;
+  }
+
   .syringe-wrapper {
+    width: 200px;
     height: auto;
-    min-height: 80px;
+    min-height: 60px;
+    margin-left: 0;
   }
 }

@@ -16,7 +16,7 @@
     <main>
       <section class="card" id="card-syringe">
         <h2>Syringe</h2>
-        <div class="input-group" style="margin-bottom: 20px">
+        <div class="input-group">
           <label for="syringePreset">Syringe Type (Preset)</label>
           <select id="syringePreset">
             <option value="custom">Custom</option>
@@ -46,7 +46,7 @@
 
       <section class="card" id="card-vial">
         <h2>Vial</h2>
-        <div class="input-group" style="margin-bottom: 20px">
+        <div class="input-group">
           <label for="vialPreset">Concentration (Preset)</label>
           <select id="vialPreset">
             <option value="custom">Custom</option>
@@ -97,16 +97,14 @@
 
       <section class="card" id="card-dosage">
         <h2>Dosage</h2>
-        <div class="input-row" style="margin-bottom: 16px">
+        <div class="input-row">
           <div class="input-group">
             <label for="doseAmount"
               >Inject (<span id="doseUnitLabel">mg</span>)</label
             >
             <input type="number" id="doseAmount" min="0" step="0.1" />
           </div>
-          <span class="separator" style="font-size: 1rem; padding-bottom: 14px"
-            >OR</span
-          >
+          <span class="separator separator-or">OR</span>
           <div class="input-group">
             <label for="doseVolume">Inject (ml)</label>
             <input type="number" id="doseVolume" min="0" step="0.01" />
@@ -142,17 +140,17 @@
           id="card-result"
           style="position: static; flex: 1; margin: 0; justify-content: center"
         >
-          <h2>Result 🎀</h2>
+          <h2>Result</h2>
           <div class="result-highlight">
-            To inject: <strong id="resultUnits">0</strong>
+            <span>To inject:</span> <strong id="resultUnits">0</strong>
             <span class="unit">U</span>
           </div>
           <p id="vialLife" class="vial-life"></p>
 
           <div class="syringe-visual-container">
             <div class="syringe-wrapper">
-              <div class="syringe-plunger" id="syringePlunger"></div>
               <div class="syringe-barrel" id="syringeBarrel">
+                <div class="syringe-plunger" id="syringePlunger"></div>
                 <div class="syringe-liquid" id="syringeLiquid"></div>
                 <div class="syringe-scale" id="syringeScale"></div>
               </div>
