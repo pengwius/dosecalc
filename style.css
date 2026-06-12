@@ -269,19 +269,35 @@ select:focus {
 .chart-block {
   background: var(--bg-color);
   border-radius: 16px;
-  padding: 30px;
-  height: 300px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100px;
+}
+
+.chart-scroll-wrapper {
+  flex: 1;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 8px;
+}
+
+.chart-inner-wrapper {
+  height: 100%;
+  min-width: 100%;
 }
 
 .chart-block canvas {
+  display: block;
   width: 100% !important;
   height: 100% !important;
 }
 
 .chart-title {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  margin-bottom: 8px;
   color: var(--text-color);
 }
 
@@ -685,17 +701,12 @@ select.input-error {
   }
 
   .chart-block {
-    height: 240px;
-    width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 10px;
-    padding-bottom: 25px;
+    padding: 16px;
+    min-height: 300px;
   }
   
-  .chart-block canvas {
-    height: 100% !important;
-    width: 600px !important;
+  .chart-inner-wrapper {
+    width: 700px; 
   }
 
   .separator {

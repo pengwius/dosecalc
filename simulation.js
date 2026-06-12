@@ -549,22 +549,26 @@ class SimulationApp {
     const createBlock = (title) => {
       const div = document.createElement("div");
       div.className = "chart-block";
-      div.innerHTML = `${title ? `<div class="chart-title">${title}</div>` : ""}<canvas></canvas>`;
+      div.innerHTML = `
+        ${title ? `<div class="chart-title">${title}</div>` : ""}
+        <div class="chart-scroll-wrapper">
+          <div class="chart-inner-wrapper">
+            <canvas></canvas>
+          </div>
+        </div>`;
       this.elements.chartsContainer.appendChild(div);
       return div.querySelector("canvas").getContext("2d");
     };
     if (this.elements.splitCharts.checked)
       datasets.forEach((d) => {
         const ctx = createBlock(`${d.label} (${d.unit})`);
-        this.charts.push(
-          new Chart(ctx, this.getChartConfig(labels, [d], colors, false)),
-        );
+        const chart = new Chart(ctx, this.getChartConfig(labels, [d], colors, false));
+        this.charts.push(chart);
       });
     else {
       const ctx = createBlock();
-      this.charts.push(
-        new Chart(ctx, this.getChartConfig(labels, datasets, colors, true)),
-      );
+      const chart = new Chart(ctx, this.getChartConfig(labels, datasets, colors, true));
+      this.charts.push(chart);
     }
   }
 
