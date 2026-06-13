@@ -612,6 +612,84 @@ select:focus {
   z-index: 1;
 }
 
+.weekdays-grid label {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.weekdays-grid label:has(input:checked) {
+  background: var(--sky-blue);
+  color: #fff;
+  border-color: var(--sky-blue);
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  padding: 32px;
+  border-radius: 32px;
+  max-width: 1000px;
+  width: 100%;
+  max-height: 95vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  position: relative;
+  border: 2px solid var(--border-color);
+}
+
+.modal-close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  font-size: 2rem;
+  color: var(--text-color);
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.modal-close:hover {
+  opacity: 1;
+}
+
+#tripSuggestionText {
+  color: var(--sky-blue);
+  border-left: 4px solid var(--sky-blue);
+  padding-left: 12px;
+  line-height: 1.4;
+}
+
+.modal-content h2 {
+  color: var(--blush-pop);
+  margin-bottom: 8px;
+}
+
+.modal-content h3 {
+  color: var(--sky-blue);
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
 footer {
   width: 100%;
   max-width: 1000px;

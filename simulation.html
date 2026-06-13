@@ -9,6 +9,54 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
     <style>
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-content {
+        background: var(--card-bg);
+        padding: 24px;
+        border-radius: 24px;
+        max-width: 900px;
+        width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: var(--shadow);
+        position: relative;
+      }
+      .modal-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        font-size: 1.5rem;
+        cursor: pointer;
+      }
+      .trip-chart-container {
+        width: 100%;
+        height: 300px;
+        margin: 16px 0;
+      }
+      .trip-dates-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .trip-date-item {
+        padding: 8px;
+        background: var(--bg-color);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        font-size: 0.9rem;
+      }
       .nav-links {
         display: flex;
         gap: 15px;
@@ -216,6 +264,102 @@
         <div id="protocolsList"></div>
       </section>
 
+      <section class="card" id="tripPlannerCard">
+        <div class="card-header">
+          <h2>Trip Planner</h2>
+        </div>
+        <p class="hint" style="margin-bottom: 16px">
+          Use this to plan your doses if you cannot take your meds with you on a
+          trip. The planner will suggest how to adjust your doses to keep your
+          levels stable.
+        </p>
+
+        <div class="input-row">
+          <div class="input-group">
+            <label>Departure Date</label>
+            <input type="date" id="tripStart" />
+          </div>
+          <div class="input-group">
+            <label>Return Date</label>
+            <input type="date" id="tripEnd" />
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="input-group">
+            <label>Target Protocol</label>
+            <select id="tripProtocolSelect"></select>
+          </div>
+          <div class="input-group">
+            <label>Adjustment Method</label>
+            <select id="tripMode">
+              <option value="single">Single larger dose before trip</option>
+              <option value="sandwich">Extra before and after trip</option>
+            </select>
+          </div>
+        </div>
+
+        <div
+          id="tripPlanResult"
+          style="
+            display: none;
+            padding: 16px;
+            background: rgba(205, 180, 219, 0.2);
+            border-radius: 16px;
+            border: 1px solid var(--pink-orchid);
+            margin-bottom: 16px;
+          "
+        >
+          <h3
+            style="
+              font-size: 1rem;
+              color: var(--text-color);
+              margin-bottom: 8px;
+            "
+          >
+            Suggested Adjustment:
+          </h3>
+          <div
+            id="tripSuggestionText"
+            style="font-weight: bold; margin-bottom: 12px"
+          ></div>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap">
+            <button
+              id="applyTripPlan"
+              style="font-size: 0.9rem; padding: 8px 16px; width: auto"
+            >
+              Apply to Schedule
+            </button>
+            <button
+              id="revertTripPlan"
+              style="
+                display: none;
+                font-size: 0.9rem;
+                padding: 8px 16px;
+                width: auto;
+                background: var(--bg-color);
+                border-style: dashed;
+              "
+            >
+              Undo Apply
+            </button>
+          </div>
+        </div>
+
+        <button
+          id="calculateTrip"
+          style="
+            width: 100%;
+            background: var(--sky-blue);
+            color: #fff;
+            border: none;
+            font-weight: bold;
+          "
+        >
+          Calculate Trip Adjustment
+        </button>
+      </section>
+
       <button
         id="resetSimulation"
         aria-label="Reset defaults"
@@ -223,6 +367,46 @@
       >
         🔄 Reset Simulator
       </button>
+
+      <div id="tripModal" class="modal">
+        <div class="modal-content">
+          <span class="modal-close" id="closeTripModal">&times;</span>
+          <h2>Trip Adjustment Plan</h2>
+          <div
+            id="tripModalSuggestion"
+            style="font-weight: bold; margin-bottom: 16px"
+          ></div>
+          <div
+            class="chart-controls"
+            style="margin-bottom: 16px; justify-content: flex-start"
+          >
+            <label class="toggle">
+              <input type="checkbox" id="showModalE2Target" />
+              Show E2 Target
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="showModalTTarget" />
+              Show T Target
+            </label>
+          </div>
+          <div class="chart-container" style="margin-bottom: 24px">
+            <div class="chart-block">
+              <canvas id="tripChart"></canvas>
+            </div>
+          </div>
+          <h3>Injection Schedule Changes:</h3>
+          <div id="tripDatesList" class="trip-dates-list"></div>
+          <div style="margin-top: 24px; display: flex; gap: 16px">
+            <button
+              id="modalApplyTrip"
+              style="background: var(--sky-blue); color: #fff; flex: 1"
+            >
+              Apply to Schedule
+            </button>
+            <button id="modalCloseBtn" style="flex: 1">Close</button>
+          </div>
+        </div>
+      </div>
     </main>
 
     <footer>
