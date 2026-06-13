@@ -98,11 +98,13 @@ header > a {
   text-decoration: none;
   font-weight: bold;
   font-size: 1rem;
-  
-  margin-left: auto; 
-  margin-right: 20px; 
-  
-  transition: color 0.2s, transform 0.2s;
+
+  margin-left: auto;
+  margin-right: 20px;
+
+  transition:
+    color 0.2s,
+    transform 0.2s;
 }
 
 #goToSimulator::before {
@@ -115,11 +117,11 @@ header > a {
 
 @media (max-width: 768px) {
   #goToSimulator::before {
-    content: "Simulator"; 
+    content: "Simulator";
   }
 
   #goToCalculator::before {
-    content: "Calculator"; 
+    content: "Calculator";
   }
 }
 
@@ -327,7 +329,6 @@ select:focus {
   color: var(--text-color);
 }
 
-
 .card-header {
   display: flex;
   align-items: center;
@@ -452,7 +453,7 @@ select:focus {
   min-height: 1.5rem;
 }
 
-@media(max-width: 768px) {
+@media (max-width: 768px) {
   .vial-life {
     margin-bottom: 16px;
   }
@@ -462,7 +463,7 @@ select:focus {
   margin-top: 48px;
 }
 
-@media(max-width: 768px) {
+@media (max-width: 768px) {
   #card-result > h2 {
     margin-top: 12px;
   }
@@ -480,7 +481,7 @@ select:focus {
   margin-top: -48px;
 }
 
-@media(max-width: 768px) {
+@media (max-width: 768px) {
   .syringe-visual-container {
     rotate: 0deg;
     transform: translateX(14px);
@@ -730,9 +731,9 @@ select.input-error {
     padding: 16px;
     min-height: 300px;
   }
-  
+
   .chart-inner-wrapper {
-    width: 700px; 
+    width: 700px;
   }
 
   .separator {

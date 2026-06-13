@@ -102,6 +102,11 @@ class SimulationApp {
       e2TargetMax: document.getElementById("e2TargetMax"),
       tTargetMin: document.getElementById("tTargetMin"),
       tTargetMax: document.getElementById("tTargetMax"),
+      useCalibration: document.getElementById("useCalibration"),
+      e2Measured: document.getElementById("e2Measured"),
+      tMeasured: document.getElementById("tMeasured"),
+      calibrationSection: document.getElementById("calibrationSection"),
+      calibrationResults: document.getElementById("calibrationResults"),
       chartsContainer: document.getElementById("chartsContainer"),
     };
     this.themeManager = new ThemeManager(
@@ -139,6 +144,9 @@ class SimulationApp {
       "e2TargetMax",
       "tTargetMin",
       "tTargetMax",
+      "useCalibration",
+      "e2Measured",
+      "tMeasured",
     ].forEach((id) => {
       this.elements[id].onchange = () => {
         if (id === "biologicalSex") {
@@ -146,6 +154,18 @@ class SimulationApp {
             this.applyTargetDefaults();
             this.lastSex = this.elements.biologicalSex.value;
           }
+        }
+        if (id === "useCalibration") {
+          this.elements.calibrationSection.style.display = this.elements
+            .useCalibration.checked
+            ? "block"
+            : "none";
+          this.elements.weightKg.closest(".input-group").style.opacity = this
+            .elements.useCalibration.checked
+            ? "0.5"
+            : "1";
+          this.elements.weightKg.disabled =
+            this.elements.useCalibration.checked;
         }
         this.updateSimulation();
       };
@@ -315,7 +335,14 @@ class SimulationApp {
     p.customList.appendChild(row);
   }
 
-  calculateProtocolLevels(params, totalDays, doseEvents, weightKg, outputStep, protocolInterval) {
+  calculateProtocolLevels(
+    params,
+    totalDays,
+    doseEvents,
+    weightKg,
+    outputStep,
+    protocolInterval,
+  ) {
     const sampleCount = Math.floor(totalDays / outputStep) + 1;
     const data = new Array(sampleCount).fill(0);
     const ka = params.ka,
@@ -339,7 +366,7 @@ class SimulationApp {
         const dt = t - e.time;
         if (dt > 0 && dt < 150) {
           let val = 0;
-          if (params.type === 'continuous') {
+          if (params.type === "continuous") {
             val = scale * e.dose * Math.exp(-ke * dt);
           } else {
             const tPeak = Math.log(ka / ke) / (ka - ke);
@@ -399,26 +426,51 @@ class SimulationApp {
         type,
         totalDays,
         events,
-        weightKg,
+        this.elements.useCalibration.checked ? 70 : weightKg,
         outputStep,
-        parseFloat(p.doseInterval.value)
+        parseFloat(p.doseInterval.value),
       );
       const target = catKey === "testosterone" ? exoT : exoE2;
       levels.forEach((v, i) => (target[i] += v));
     });
+
+    let e2CalibFactor = 1.0,
+      tCalibFactor = 1.0;
+    let calibrationLog = "";
+
+    if (this.elements.useCalibration.checked) {
+      const e2M = parseFloat(this.elements.e2Measured.value);
+      if (!isNaN(e2M) && exoE2[0] > 0) {
+        e2CalibFactor = e2M / exoE2[0];
+        const effWeight = Math.round(70 / e2CalibFactor);
+        calibrationLog += `Effective weight (E2): ${effWeight}kg. `;
+      }
+      const tM = parseFloat(this.elements.tMeasured.value);
+      if (!isNaN(tM) && exoT[0] > 0) {
+        tCalibFactor = tM / exoT[0];
+        const effWeight = Math.round(70 / tCalibFactor);
+        calibrationLog += `Effective weight (T): ${effWeight}kg. `;
+      }
+
+      exoE2.forEach((v, i) => (exoE2[i] = v * e2CalibFactor));
+      exoT.forEach((v, i) => (exoT[i] = v * tCalibFactor));
+    }
+    this.elements.calibrationResults.textContent = calibrationLog;
 
     const baseE2 = isAMAB ? 20 : 100,
       baseT = isAMAB ? 500 : 35;
     const finalE = new Array(sampleCount),
       finalT = new Array(sampleCount);
 
-    let hpgSuppressionLevel = 1.0; 
-    const inertia = 0.05; 
+    let hpgSuppressionLevel = 1.0;
+    const inertia = 0.05;
 
     if (this.elements.steadyState.checked) {
-       const initialE2 = exoE2[0] || 0;
-       const initialT = exoT[0] || 0;
-       hpgSuppressionLevel = isAMAB ? 1 / (1 + Math.pow(initialE2 / 100, 3.0)) : 1 / (1 + Math.pow(initialT / 300, 2.5));
+      const initialE2 = exoE2[0] || 0;
+      const initialT = exoT[0] || 0;
+      hpgSuppressionLevel = isAMAB
+        ? 1 / (1 + Math.pow(initialE2 / 100, 3.0))
+        : 1 / (1 + Math.pow(initialT / 300, 2.5));
     }
 
     for (let i = 0; i < sampleCount; i++) {
@@ -438,18 +490,26 @@ class SimulationApp {
 
       if (isAMAB) {
         const targetSuppression = 1 / (1 + Math.pow(smoothedE2 / 100, 3.0));
-        hpgSuppressionLevel = this.elements.steadyState.checked ? targetSuppression : hpgSuppressionLevel + (targetSuppression - hpgSuppressionLevel) * inertia;
+        hpgSuppressionLevel = this.elements.steadyState.checked
+          ? targetSuppression
+          : hpgSuppressionLevel +
+            (targetSuppression - hpgSuppressionLevel) * inertia;
 
         finalE[i] = Math.round(baseE2 + curE2);
 
         const adrenalT = 20;
-        const gonadalT = (baseT - adrenalT) * hpgSuppressionLevel * (1 - blockerEffect[i]);
+        const gonadalT =
+          (baseT - adrenalT) * hpgSuppressionLevel * (1 - blockerEffect[i]);
         finalT[i] = Math.round(gonadalT + curT + adrenalT);
       } else {
-        if (typeof hpgSuppressionLevel === 'undefined') hpgSuppressionLevel = 1.0;
+        if (typeof hpgSuppressionLevel === "undefined")
+          hpgSuppressionLevel = 1.0;
         const targetSuppression = 1 / (1 + Math.pow(curT / 300, 2.5));
-        hpgSuppressionLevel = this.elements.steadyState.checked ? targetSuppression : hpgSuppressionLevel + (targetSuppression - hpgSuppressionLevel) * inertia;
-        
+        hpgSuppressionLevel = this.elements.steadyState.checked
+          ? targetSuppression
+          : hpgSuppressionLevel +
+            (targetSuppression - hpgSuppressionLevel) * inertia;
+
         finalT[i] = Math.round(baseT + curT);
         finalE[i] = Math.round(baseE2 * hpgSuppressionLevel + curE2);
       }
@@ -492,6 +552,9 @@ class SimulationApp {
       e2TargetMax: this.elements.e2TargetMax.value,
       tTargetMin: this.elements.tTargetMin.value,
       tTargetMax: this.elements.tTargetMax.value,
+      useCalibration: this.elements.useCalibration.checked,
+      e2Measured: this.elements.e2Measured.value,
+      tMeasured: this.elements.tMeasured.value,
       protocols: this.protocols.map((p) => ({
         category: p.categorySelect.value,
         type: p.typeSelect.value,
@@ -526,10 +589,32 @@ class SimulationApp {
       this.elements.showT.checked = state.showT ?? true;
       this.elements.showE2Target.checked = state.showE2Target || false;
       this.elements.showTTarget.checked = state.showTTarget || false;
-      this.elements.e2TargetMin.value = state.e2TargetMin ?? (this.elements.biologicalSex.value === "amab" ? 150 : 20);
-      this.elements.e2TargetMax.value = state.e2TargetMax ?? (this.elements.biologicalSex.value === "amab" ? 400 : 50);
-      this.elements.tTargetMin.value = state.tTargetMin ?? (this.elements.biologicalSex.value === "amab" ? 10 : 400);
-      this.elements.tTargetMax.value = state.tTargetMax ?? (this.elements.biologicalSex.value === "amab" ? 50 : 700);
+      this.elements.e2TargetMin.value =
+        state.e2TargetMin ??
+        (this.elements.biologicalSex.value === "amab" ? 150 : 20);
+      this.elements.e2TargetMax.value =
+        state.e2TargetMax ??
+        (this.elements.biologicalSex.value === "amab" ? 400 : 50);
+      this.elements.tTargetMin.value =
+        state.tTargetMin ??
+        (this.elements.biologicalSex.value === "amab" ? 10 : 400);
+      this.elements.tTargetMax.value =
+        state.tTargetMax ??
+        (this.elements.biologicalSex.value === "amab" ? 50 : 700);
+      this.elements.useCalibration.checked = state.useCalibration || false;
+      this.elements.e2Measured.value = state.e2Measured || "";
+      this.elements.tMeasured.value = state.tMeasured || "";
+      this.elements.calibrationSection.style.display = this.elements
+        .useCalibration.checked
+        ? "block"
+        : "none";
+      this.elements.weightKg.disabled = this.elements.useCalibration.checked;
+      if (this.elements.weightKg.closest(".input-group")) {
+        this.elements.weightKg.closest(".input-group").style.opacity = this
+          .elements.useCalibration.checked
+          ? "0.5"
+          : "1";
+      }
       this.lastSex = this.elements.biologicalSex.value;
       if (state.protocols)
         state.protocols.forEach((pData) => this.addProtocol(pData));
@@ -551,16 +636,16 @@ class SimulationApp {
     if (!start || !dateStr) return parseFloat(dateStr) || 0;
 
     const parseDate = (d) => {
-      const parts = d.split('/');
+      const parts = d.split("/");
       if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
       return new Date(d);
     };
 
     const startDate = parseDate(start);
     const targetDate = parseDate(dateStr);
-    
+
     if (isNaN(startDate) || isNaN(targetDate)) return parseFloat(dateStr) || 0;
-    
+
     const diff = targetDate - startDate;
     return Math.max(0, diff / (1000 * 60 * 60 * 24));
   }
@@ -569,9 +654,9 @@ class SimulationApp {
     const events = [];
     const catKey = p.categorySelect.value;
     const type = this.substances[catKey]?.esters?.[p.typeSelect.value];
-    
-    if (type?.type === 'continuous') {
-      const frequency = 8 / 24; 
+
+    if (type?.type === "continuous") {
+      const frequency = 8 / 24;
       for (let t = 0; t < totalDays; t += frequency) {
         events.push({ time: t, dose: parseFloat(p.doseAmount.value) / 3 });
       }
@@ -627,97 +712,103 @@ class SimulationApp {
 
     const getTargetAnnotations = (hormone) => {
       const ann = {};
-      if ((hormone === 'Estradiol' || hormone === 'both') && this.elements.showE2Target.checked) {
+      if (
+        (hormone === "Estradiol" || hormone === "both") &&
+        this.elements.showE2Target.checked
+      ) {
         const min = parseFloat(this.elements.e2TargetMin.value);
         const max = parseFloat(this.elements.e2TargetMax.value);
         if (!isNaN(min) && !isNaN(max)) {
           ann.e2Box = {
-            type: 'box',
+            type: "box",
             yMin: min,
             yMax: max,
-            backgroundColor: 'rgba(255, 175, 204, 0.1)',
-            borderColor: 'transparent',
-            drawTime: 'beforeDatasetsDraw'
+            backgroundColor: "rgba(255, 175, 204, 0.1)",
+            borderColor: "transparent",
+            drawTime: "beforeDatasetsDraw",
           };
           ann.e2MinLine = {
-            type: 'line',
+            type: "line",
             yMin: min,
             yMax: min,
-            borderColor: 'rgba(255, 175, 204, 0.5)',
+            borderColor: "rgba(255, 175, 204, 0.5)",
             borderWidth: 2,
             borderDash: [5, 5],
             label: {
               display: true,
-              content: 'E2 Min',
-              position: 'start',
-              backgroundColor: 'rgba(255, 175, 204, 0.8)',
-              color: '#fff',
-              font: { size: 10 }
-            }
+              content: "E2 Min",
+              position: "start",
+              backgroundColor: "rgba(255, 175, 204, 0.8)",
+              color: "#fff",
+              font: { size: 10 },
+            },
           };
           ann.e2MaxLine = {
-            type: 'line',
+            type: "line",
             yMin: max,
             yMax: max,
-            borderColor: 'rgba(255, 175, 204, 0.5)',
+            borderColor: "rgba(255, 175, 204, 0.5)",
             borderWidth: 2,
             borderDash: [5, 5],
             label: {
               display: true,
-              content: 'E2 Max',
-              position: 'start',
-              backgroundColor: 'rgba(255, 175, 204, 0.8)',
-              color: '#fff',
-              font: { size: 10 }
-            }
+              content: "E2 Max",
+              position: "start",
+              backgroundColor: "rgba(255, 175, 204, 0.8)",
+              color: "#fff",
+              font: { size: 10 },
+            },
           };
         }
       }
-      if ((hormone === 'Testosterone' || hormone === 'both') && this.elements.showTTarget.checked) {
-         const min = parseFloat(this.elements.tTargetMin.value);
-         const max = parseFloat(this.elements.tTargetMax.value);
-         if (!isNaN(min) && !isNaN(max)) {
-           ann.tBox = {
-             type: 'box',
-             yMin: min,
-             yMax: max,
-             backgroundColor: 'rgba(162, 210, 255, 0.1)',
-             borderColor: 'transparent',
-             drawTime: 'beforeDatasetsDraw'
-           };
-           ann.tMinLine = {
-             type: 'line',
-             yMin: min,
-             yMax: min,
-             borderColor: 'rgba(162, 210, 255, 0.5)',
-             borderWidth: 2,
-             borderDash: [5, 5],
-             label: {
-               display: true,
-               content: 'T Min',
-               position: 'end',
-               backgroundColor: 'rgba(162, 210, 255, 0.8)',
-               color: '#fff',
-               font: { size: 10 }
-             }
-           };
-           ann.tMaxLine = {
-             type: 'line',
-             yMin: max,
-             yMax: max,
-             borderColor: 'rgba(162, 210, 255, 0.5)',
-             borderWidth: 2,
-             borderDash: [5, 5],
-             label: {
-               display: true,
-               content: 'T Max',
-               position: 'end',
-               backgroundColor: 'rgba(162, 210, 255, 0.8)',
-               color: '#fff',
-               font: { size: 10 }
-             }
-           };
-         }
+      if (
+        (hormone === "Testosterone" || hormone === "both") &&
+        this.elements.showTTarget.checked
+      ) {
+        const min = parseFloat(this.elements.tTargetMin.value);
+        const max = parseFloat(this.elements.tTargetMax.value);
+        if (!isNaN(min) && !isNaN(max)) {
+          ann.tBox = {
+            type: "box",
+            yMin: min,
+            yMax: max,
+            backgroundColor: "rgba(162, 210, 255, 0.1)",
+            borderColor: "transparent",
+            drawTime: "beforeDatasetsDraw",
+          };
+          ann.tMinLine = {
+            type: "line",
+            yMin: min,
+            yMax: min,
+            borderColor: "rgba(162, 210, 255, 0.5)",
+            borderWidth: 2,
+            borderDash: [5, 5],
+            label: {
+              display: true,
+              content: "T Min",
+              position: "end",
+              backgroundColor: "rgba(162, 210, 255, 0.8)",
+              color: "#fff",
+              font: { size: 10 },
+            },
+          };
+          ann.tMaxLine = {
+            type: "line",
+            yMin: max,
+            yMax: max,
+            borderColor: "rgba(162, 210, 255, 0.5)",
+            borderWidth: 2,
+            borderDash: [5, 5],
+            label: {
+              display: true,
+              content: "T Max",
+              position: "end",
+              backgroundColor: "rgba(162, 210, 255, 0.8)",
+              color: "#fff",
+              font: { size: 10 },
+            },
+          };
+        }
       }
       return ann;
     };
@@ -725,12 +816,30 @@ class SimulationApp {
     if (this.elements.splitCharts.checked)
       datasets.forEach((d) => {
         const ctx = createBlock(`${d.label} (${d.unit})`);
-        const chart = new Chart(ctx, this.getChartConfig(labels, [d], colors, false, getTargetAnnotations(d.label)));
+        const chart = new Chart(
+          ctx,
+          this.getChartConfig(
+            labels,
+            [d],
+            colors,
+            false,
+            getTargetAnnotations(d.label),
+          ),
+        );
         this.charts.push(chart);
       });
     else {
       const ctx = createBlock();
-      const chart = new Chart(ctx, this.getChartConfig(labels, datasets, colors, true, getTargetAnnotations('both')));
+      const chart = new Chart(
+        ctx,
+        this.getChartConfig(
+          labels,
+          datasets,
+          colors,
+          true,
+          getTargetAnnotations("both"),
+        ),
+      );
       this.charts.push(chart);
     }
   }
@@ -757,7 +866,7 @@ class SimulationApp {
         plugins: {
           legend: { display: showLegend, labels: { color: colors.text } },
           annotation: {
-             annotations: annotations
+            annotations: annotations,
           },
           tooltip: {
             callbacks: {
@@ -769,7 +878,10 @@ class SimulationApp {
           x: {
             title: {
               display: true,
-              text: this.elements.chartTimeUnit.value === "hours" ? "Hours" : "Days",
+              text:
+                this.elements.chartTimeUnit.value === "hours"
+                  ? "Hours"
+                  : "Days",
               color: colors.text,
             },
             grid: { color: colors.grid },

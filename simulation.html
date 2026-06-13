@@ -8,25 +8,25 @@
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
-      <style>
-        .nav-links {
-          display: flex;
-          gap: 15px;
-          margin-bottom: 20px;
-        }
-        .nav-links a {
-          color: var(--pink-orchid);
-          text-decoration: none;
-          font-weight: bold;
-        }
-        .chart-container {
-          position: relative;
-          width: 100%;
-          height: auto;
-          min-height: 260px;
-          margin-top: 16px;
-        }
-      </style>
+    <style>
+      .nav-links {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      .nav-links a {
+        color: var(--pink-orchid);
+        text-decoration: none;
+        font-weight: bold;
+      }
+      .chart-container {
+        position: relative;
+        width: 100%;
+        height: auto;
+        min-height: 260px;
+        margin-top: 16px;
+      }
+    </style>
   </head>
   <body>
     <header>
@@ -73,7 +73,7 @@
 
       <section class="card">
         <h2>Simulation Settings</h2>
-      <div class="input-row">
+        <div class="input-row">
           <div class="input-group">
             <label for="biologicalSex">Assigned Sex</label>
             <select id="biologicalSex">
@@ -91,7 +91,13 @@
           </div>
           <div class="input-group">
             <label for="cycleLength">Simulation Days</label>
-            <input type="number" id="cycleLength" value="30" min="7" max="365" />
+            <input
+              type="number"
+              id="cycleLength"
+              value="30"
+              min="7"
+              max="365"
+            />
           </div>
           <div class="input-group">
             <label for="chartTimeUnit">Chart Unit</label>
@@ -101,18 +107,95 @@
             </select>
           </div>
         </div>
-        <div class="input-row"><label class="toggle"><input type="checkbox" id="steadyState" /> Start in Steady State</label></div>      </section>
+        <div class="input-row">
+          <label class="toggle"
+            ><input type="checkbox" id="steadyState" /> Start in Steady
+            State</label
+          >
+        </div>
+      </section>
 
       <section class="card" id="targetRangesCard">
-        <h2>Target Ranges</h2>
+        <div class="card-header">
+          <h2>Target & Calibration</h2>
+          <label class="toggle">
+            <input type="checkbox" id="useCalibration" />
+            Calibrate by blood test
+          </label>
+        </div>
+
+        <div
+          id="calibrationSection"
+          style="
+            display: none;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: rgba(162, 210, 255, 0.1);
+            border-radius: 16px;
+            border: 1px dashed var(--sky-blue);
+          "
+        >
+          <div class="input-row">
+            <div class="input-group">
+              <label>Measured E2 Trough (pg/mL)</label>
+              <input
+                type="number"
+                id="e2Measured"
+                placeholder="e.g. 250"
+                min="0"
+                step="1"
+              />
+            </div>
+            <div class="input-group">
+              <label>Measured T Trough (ng/dL)</label>
+              <input
+                type="number"
+                id="tMeasured"
+                placeholder="e.g. 30"
+                min="0"
+                step="1"
+              />
+            </div>
+          </div>
+          <p
+            class="hint"
+            style="margin-top: 0; margin-bottom: 12px; font-style: italic"
+          >
+            Calibration is accurate only if these results are from a blood test
+            taken at the "trough" (just before your next dose) after your levels
+            have already reached a steady state.
+          </p>
+          <div
+            id="calibrationResults"
+            style="
+              font-size: 0.85rem;
+              font-weight: bold;
+              color: var(--sky-blue);
+              margin-top: 8px;
+            "
+          ></div>
+        </div>
+
         <div class="input-row">
           <div class="input-group">
             <label>Estradiol Min (pg/mL)</label>
-            <input type="number" id="e2TargetMin" value="150" min="0" step="1" />
+            <input
+              type="number"
+              id="e2TargetMin"
+              value="150"
+              min="0"
+              step="1"
+            />
           </div>
           <div class="input-group">
             <label>Estradiol Max (pg/mL)</label>
-            <input type="number" id="e2TargetMax" value="400" min="0" step="1" />
+            <input
+              type="number"
+              id="e2TargetMax"
+              value="400"
+              min="0"
+              step="1"
+            />
           </div>
           <div class="input-group">
             <label>Testosterone Min (ng/dL)</label>
@@ -133,7 +216,11 @@
         <div id="protocolsList"></div>
       </section>
 
-      <button id="resetSimulation" aria-label="Reset defaults" style="width: 100%; padding: 16px; font-weight: bold">
+      <button
+        id="resetSimulation"
+        aria-label="Reset defaults"
+        style="width: 100%; padding: 16px; font-weight: bold"
+      >
         🔄 Reset Simulator
       </button>
     </main>
