@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="favicon.png" />
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
       <style>
         .nav-links {
           display: flex;
@@ -39,9 +40,29 @@
         <div class="chart-header">
           <h2>Blood Concentration</h2>
           <div class="chart-controls">
-            <label class="toggle">
+            <div class="control-group">
+              <label class="toggle">
+                <input type="checkbox" id="showE2" checked />
+                Show E2
+              </label>
+              <label class="toggle sub-toggle">
+                <input type="checkbox" id="showE2Target" />
+                Target
+              </label>
+            </div>
+            <div class="control-group">
+              <label class="toggle">
+                <input type="checkbox" id="showT" checked />
+                Show T
+              </label>
+              <label class="toggle sub-toggle">
+                <input type="checkbox" id="showTTarget" />
+                Target
+              </label>
+            </div>
+            <label class="toggle" id="splitChartsToggle">
               <input type="checkbox" id="splitCharts" />
-              Separate charts per hormone
+              Split Charts
             </label>
           </div>
         </div>
@@ -81,6 +102,28 @@
           </div>
         </div>
         <div class="input-row"><label class="toggle"><input type="checkbox" id="steadyState" /> Start in Steady State</label></div>      </section>
+
+      <section class="card" id="targetRangesCard">
+        <h2>Target Ranges</h2>
+        <div class="input-row">
+          <div class="input-group">
+            <label>Estradiol Min (pg/mL)</label>
+            <input type="number" id="e2TargetMin" value="150" min="0" step="1" />
+          </div>
+          <div class="input-group">
+            <label>Estradiol Max (pg/mL)</label>
+            <input type="number" id="e2TargetMax" value="400" min="0" step="1" />
+          </div>
+          <div class="input-group">
+            <label>Testosterone Min (ng/dL)</label>
+            <input type="number" id="tTargetMin" value="10" min="0" step="1" />
+          </div>
+          <div class="input-group">
+            <label>Testosterone Max (ng/dL)</label>
+            <input type="number" id="tTargetMax" value="50" min="0" step="1" />
+          </div>
+        </div>
+      </section>
 
       <section class="card" id="protocolsCard">
         <div class="card-header">
