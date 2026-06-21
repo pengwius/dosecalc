@@ -1,0 +1,22 @@
+:root {
+  --pink-orchid: #cdb4db;
+  --pastel-petal: #ffc8dd;
+  --blush-pop: #ffafcc;
+  --icy-blue: #bde0fe;
+  --sky-blue: #a2d2ff;
+  --bg-color: #fff0f5;
+  --card-bg: #ffffff;
+  --text-color: #5c4d68;
+  --border-color: var(--pink-orchid);
+  --focus-ring: var(--blush-pop);
+  --shadow: 0 8px 24px rgba(205, 180, 219, 0.3);
+}
+
+[data-theme="dark"] {
+  --bg-color: #2b2533;
+  --card-bg: #3d3547;
+  --text-color: #fdf5ff;
+  --border-color: #5c4d68;
+  --focus-ring: var(--sky-blue);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}

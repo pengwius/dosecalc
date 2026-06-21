@@ -1,11 +1,11 @@
-const CONFIG = {
-  dose: 50, // mg
-  interval: 15, // days
-  weightKg: 70,
+const OPTIMIZATION_CONFIG = {
+  doseMg: 50,
+  doseIntervalDays: 15,
+  patientWeightKg: 70,
   biologicalSex: "afab",
-  outputStep: 1,
+  simulationOutputStepDays: 1,
 
-  history: [
+  measuredHistory: [
     { peak: 275, trough: 196 },
     { peak: 464, trough: 332 },
     { peak: 596, trough: 423 },
@@ -23,154 +23,289 @@ const CONFIG = {
   ],
 };
 
-function simulateConcentration(ka, ke, scale, config) {
-  const totalWeeks = config.history.length;
-  const totalDays = totalWeeks * config.interval;
+const SOLVER_RUNTIME_MS = 60000;
+const ITERATIONS_PER_STEP = 500;
+const HISTORY_PEAK_OFFSET = 20;
+const STEADY_STATE_DOSE_INDEX = 13;
 
-  let doseEvents = [];
-  for (let day = 0; day < totalDays; day += config.interval) {
-    doseEvents.push({ time: day, dose: config.dose });
+function buildDoseSchedule(totalDays, doseMg, intervalDays) {
+  const doseEvents = [];
+  for (let day = 0; day < totalDays; day += intervalDays) {
+    doseEvents.push({ time: day, dose: doseMg });
   }
+  return doseEvents;
+}
 
-  const sampleCount = Math.floor(totalDays / config.outputStep) + 1;
-  const levels = new Array(sampleCount).fill(0);
-  const weightFactor = 70 / config.weightKg;
+function simulateConcentrationCurve(
+  absorptionRate,
+  eliminationRate,
+  scaleFactor,
+  config,
+) {
+  const totalWeeks = config.measuredHistory.length;
+  const totalDays = totalWeeks * config.doseIntervalDays;
+  const doseEvents = buildDoseSchedule(
+    totalDays,
+    config.doseMg,
+    config.doseIntervalDays,
+  );
 
-  for (let i = 0; i < sampleCount; i++) {
-    const t = i * config.outputStep;
-    let total = 0;
-    doseEvents.forEach((e) => {
-      const dt = t - e.time;
-      if (dt > 0 && dt < 150) {
-        const tPeak = Math.log(ka / ke) / (ka - ke);
-        const fMax = Math.exp(-ke * tPeak) - Math.exp(-ka * tPeak);
-        let val = (Math.exp(-ke * dt) - Math.exp(-ka * dt)) / fMax;
-        val = val * e.dose * scale;
-        total += val * weightFactor;
+  const sampleCount =
+    Math.floor(totalDays / config.simulationOutputStepDays) + 1;
+  const concentrationLevels = new Array(sampleCount).fill(0);
+  const weightFactor = 70 / config.patientWeightKg;
+
+  for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
+    const currentTime = sampleIndex * config.simulationOutputStepDays;
+    let totalConcentration = 0;
+
+    doseEvents.forEach((event) => {
+      const timeSinceDose = currentTime - event.time;
+      if (timeSinceDose > 0 && timeSinceDose < 150) {
+        const timeToPeak =
+          Math.log(absorptionRate / eliminationRate) /
+          (absorptionRate - eliminationRate);
+        const maxConcentration =
+          Math.exp(-eliminationRate * timeToPeak) -
+          Math.exp(-absorptionRate * timeToPeak);
+        let contribution =
+          (Math.exp(-eliminationRate * timeSinceDose) -
+            Math.exp(-absorptionRate * timeSinceDose)) /
+          maxConcentration;
+        contribution = contribution * event.dose * scaleFactor;
+        totalConcentration += contribution * weightFactor;
       }
     });
-    levels[i] = total;
+
+    concentrationLevels[sampleIndex] = totalConcentration;
   }
 
-  let results = [];
-  for (let w = 0; w < totalWeeks; w++) {
-    let startIdx = w * config.interval;
-    let endIdx = (w + 1) * config.interval;
-    let weekLevels = levels.slice(startIdx, endIdx);
-    results.push({ peak: Math.max(...weekLevels), trough: levels[endIdx] });
+  return extractWeeklyPeaksAndTroughs(
+    concentrationLevels,
+    totalWeeks,
+    config.doseIntervalDays,
+  );
+}
+
+function extractWeeklyPeaksAndTroughs(levels, totalWeeks, intervalDays) {
+  const results = [];
+  for (let week = 0; week < totalWeeks; week++) {
+    const startIndex = week * intervalDays;
+    const endIndex = (week + 1) * intervalDays;
+    const weekLevels = levels.slice(startIndex, endIndex);
+    results.push({ peak: Math.max(...weekLevels), trough: levels[endIndex] });
   }
   return results;
 }
 
-function calculateOptimizationError(ka, ke, scale) {
-  if (ka <= ke || ka <= 0 || ke <= 0 || scale <= 0) return Infinity;
-  let sim = simulateConcentration(ka, ke, scale, CONFIG);
-
-  let error = 0;
-  for (let i = 1; i < CONFIG.history.length; i++) {
-    let realDeltaPeak = CONFIG.history[i].peak - CONFIG.history[0].peak;
-    let simDeltaPeak = sim[i].peak - sim[0].peak;
-
-    let realDeltaTrough = CONFIG.history[i].trough - CONFIG.history[0].trough;
-    let simDeltaTrough = sim[i].trough - sim[0].trough;
-
-    error += Math.pow(simDeltaPeak - realDeltaPeak, 2);
-    error += Math.pow(simDeltaTrough - realDeltaTrough, 2);
+function calculateSimulationError(
+  absorptionRate,
+  eliminationRate,
+  scaleFactor,
+) {
+  if (
+    absorptionRate <= eliminationRate ||
+    absorptionRate <= 0 ||
+    eliminationRate <= 0 ||
+    scaleFactor <= 0
+  ) {
+    return Infinity;
   }
-  return error;
+
+  const simulatedResults = simulateConcentrationCurve(
+    absorptionRate,
+    eliminationRate,
+    scaleFactor,
+    OPTIMIZATION_CONFIG,
+  );
+  const { measuredHistory } = OPTIMIZATION_CONFIG;
+
+  let totalError = 0;
+  for (let i = 1; i < measuredHistory.length; i++) {
+    const realPeakDelta = measuredHistory[i].peak - measuredHistory[0].peak;
+    const simulatedPeakDelta =
+      simulatedResults[i].peak - simulatedResults[0].peak;
+
+    const realTroughDelta =
+      measuredHistory[i].trough - measuredHistory[0].trough;
+    const simulatedTroughDelta =
+      simulatedResults[i].trough - simulatedResults[0].trough;
+
+    totalError += Math.pow(simulatedPeakDelta - realPeakDelta, 2);
+    totalError += Math.pow(simulatedTroughDelta - realTroughDelta, 2);
+  }
+
+  return totalError;
 }
 
-function updateConsoleOutput(msg) {
+function generateRandomParameter(center, radius) {
+  return center + (Math.random() - 0.5) * radius;
+}
+
+function calculateSearchRadius(progressFraction) {
+  let radius = 2.0 * (1.0 - progressFraction);
+  return radius < 0.001 ? 0.001 : radius;
+}
+
+function buildProgressBar(filledRatio) {
+  const barLength = 20;
+  const filled = Math.round(barLength * Math.min(filledRatio, 1));
+  return "█".repeat(filled) + "░".repeat(barLength - filled);
+}
+
+function clearAndPrintConsole(message) {
   console.clear();
-  console.log(msg);
+  console.log(message);
 }
 
-function runOptimizationSolver() {
-  return new Promise((resolve) => {
-    const TARGET_TIME = 60000; 
-    const startTime = Date.now();
-
-    let bestKa = 0.5,
-      bestKe = 0.1,
-      bestScale = 4.0;
-    let minError = Infinity;
-    let iterationCount = 0;
-
-    function solverStep() {
-      const elapsed = Date.now() - startTime;
-      const progress = elapsed / TARGET_TIME;
-
-      let radius = 2.0 * (1.0 - progress);
-      if (radius < 0.001) radius = 0.001;
-
-      for (let i = 0; i < 500; i++) {
-        iterationCount++;
-
-        let testKa = bestKa + (Math.random() - 0.5) * radius;
-        let testKe = bestKe + (Math.random() - 0.5) * (radius * 0.2);
-        let testScale = bestScale + (Math.random() - 0.5) * (radius * 5);
-
-        if (testKa <= testKe || testKa <= 0 || testKe <= 0 || testScale <= 0)
-          continue;
-
-        let err = calculateOptimizationError(testKa, testKe, testScale);
-        if (err < minError) {
-          minError = err;
-          bestKa = testKa;
-          bestKe = testKe;
-          bestScale = testScale;
-        }
-      }
-
-      const barLength = 20;
-      const filled = Math.round(barLength * Math.min(progress, 1));
-      const bar = "█".repeat(filled) + "░".repeat(barLength - filled);
-
-      updateConsoleOutput(
-        `RUNNING SOLVER [${bar}] ${(Math.min(progress, 1) * 100).toFixed(1)}% | Iterations: ${iterationCount} | Current Error: ${minError.toFixed(2)}`,
-      );
-
-      if (elapsed < TARGET_TIME) {
-        setTimeout(solverStep, 0);
-      } else {
-        let sim = simulateConcentration(bestKa, bestKe, bestScale, CONFIG);
-        let targetPureStablePeak = 873 - 20;
-        bestScale = (targetPureStablePeak / sim[13].peak) * bestScale;
-
-        resolve({ ka: bestKa, ke: bestKe, scale: bestScale });
-      }
-    }
-
-    solverStep();
-  });
-}
-
-runOptimizationSolver().then((res) => {
-  console.clear();
+function displayResults(
+  bestAbsorptionRate,
+  bestEliminationRate,
+  bestScaleFactor,
+) {
   console.log("\n=======================================================");
   console.log("               PARAMS SOLVER RESULTS                   ");
   console.log("=======================================================");
-  console.log(`ka:    ${res.ka.toFixed(6)}`);
-  console.log(`ke:    ${res.ke.toFixed(6)}`);
-  console.log(`scale: ${res.scale.toFixed(6)}`);
+  console.log(`ka:    ${bestAbsorptionRate.toFixed(6)}`);
+  console.log(`ke:    ${bestEliminationRate.toFixed(6)}`);
+  console.log(`scale: ${bestScaleFactor.toFixed(6)}`);
   console.log("=======================================================");
 
-  let simResults = simulateConcentration(res.ka, res.ke, res.scale, CONFIG);
+  const simulatedResults = simulateConcentrationCurve(
+    bestAbsorptionRate,
+    bestEliminationRate,
+    bestScaleFactor,
+    OPTIMIZATION_CONFIG,
+  );
 
   console.log("Comparison Table (Target vs Simulated):");
-  CONFIG.history.forEach((target, i) => {
-    let currentPeak = Math.round(simResults[i].peak + 20);
-    let currentTrough = Math.round(simResults[i].trough + 20);
+  OPTIMIZATION_CONFIG.measuredHistory.forEach((target, index) => {
+    const simulatedPeak = Math.round(
+      simulatedResults[index].peak + HISTORY_PEAK_OFFSET,
+    );
+    const simulatedTrough = Math.round(
+      simulatedResults[index].trough + HISTORY_PEAK_OFFSET,
+    );
 
-    let diffP = currentPeak - target.peak;
-    let diffT = currentTrough - target.trough;
+    const peakDiff = simulatedPeak - target.peak;
+    const troughDiff = simulatedTrough - target.trough;
 
-    let statusP = diffP === 0 ? "EXACT" : `${diffP >= 0 ? "+" : ""}${diffP}`;
-    let statusT = diffT === 0 ? "EXACT" : `${diffT >= 0 ? "+" : ""}${diffT}`;
+    const peakStatus =
+      peakDiff === 0 ? "EXACT" : `${peakDiff >= 0 ? "+" : ""}${peakDiff}`;
+    const troughStatus =
+      troughDiff === 0 ? "EXACT" : `${troughDiff >= 0 ? "+" : ""}${troughDiff}`;
 
-    console.log(`Dose ${i + 1}:`);
-    console.log(`  Peak:   ${target.peak} -> ${currentPeak} (Diff: ${statusP})`);
-    console.log(`  Trough: ${target.trough} -> ${currentTrough} (Diff: ${statusT})`);
+    console.log(`Dose ${index + 1}:`);
+    console.log(
+      `  Peak:   ${target.peak} -> ${simulatedPeak} (Diff: ${peakStatus})`,
+    );
+    console.log(
+      `  Trough: ${target.trough} -> ${simulatedTrough} (Diff: ${troughStatus})`,
+    );
   });
   console.log("=======================================================");
+}
+
+function calibrateScaleToSteadyState(
+  absorptionRate,
+  eliminationRate,
+  currentScale,
+  targetPeak,
+) {
+  const simulatedResults = simulateConcentrationCurve(
+    absorptionRate,
+    eliminationRate,
+    currentScale,
+    OPTIMIZATION_CONFIG,
+  );
+  const steadyStatePeak = simulatedResults[STEADY_STATE_DOSE_INDEX].peak;
+  return (targetPeak / steadyStatePeak) * currentScale;
+}
+
+function runMonteCarloOptimization() {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+
+    let bestAbsorptionRate = 0.5;
+    let bestEliminationRate = 0.1;
+    let bestScaleFactor = 4.0;
+    let minimumError = Infinity;
+    let totalIterations = 0;
+
+    function performOptimizationStep() {
+      const elapsedMs = Date.now() - startTime;
+      const progress = elapsedMs / SOLVER_RUNTIME_MS;
+      const searchRadius = calculateSearchRadius(progress);
+
+      for (let i = 0; i < ITERATIONS_PER_STEP; i++) {
+        totalIterations++;
+
+        const testAbsorption = generateRandomParameter(
+          bestAbsorptionRate,
+          searchRadius,
+        );
+        const testElimination = generateRandomParameter(
+          bestEliminationRate,
+          searchRadius * 0.2,
+        );
+        const testScale = generateRandomParameter(
+          bestScaleFactor,
+          searchRadius * 5,
+        );
+
+        if (
+          testAbsorption <= testElimination ||
+          testAbsorption <= 0 ||
+          testElimination <= 0 ||
+          testScale <= 0
+        ) {
+          continue;
+        }
+
+        const error = calculateSimulationError(
+          testAbsorption,
+          testElimination,
+          testScale,
+        );
+        if (error < minimumError) {
+          minimumError = error;
+          bestAbsorptionRate = testAbsorption;
+          bestEliminationRate = testElimination;
+          bestScaleFactor = testScale;
+        }
+      }
+
+      const progressBar = buildProgressBar(progress);
+      clearAndPrintConsole(
+        `RUNNING SOLVER [${progressBar}] ${(Math.min(progress, 1) * 100).toFixed(1)}% | Iterations: ${totalIterations} | Current Error: ${minimumError.toFixed(2)}`,
+      );
+
+      if (elapsedMs < SOLVER_RUNTIME_MS) {
+        setTimeout(performOptimizationStep, 0);
+      } else {
+        const targetPureSteadyStatePeak =
+          OPTIMIZATION_CONFIG.measuredHistory[STEADY_STATE_DOSE_INDEX].peak -
+          HISTORY_PEAK_OFFSET;
+        bestScaleFactor = calibrateScaleToSteadyState(
+          bestAbsorptionRate,
+          bestEliminationRate,
+          bestScaleFactor,
+          targetPureSteadyStatePeak,
+        );
+
+        resolve({
+          ka: bestAbsorptionRate,
+          ke: bestEliminationRate,
+          scale: bestScaleFactor,
+        });
+      }
+    }
+
+    performOptimizationStep();
+  });
+}
+
+runMonteCarloOptimization().then((result) => {
+  console.clear();
+  displayResults(result.ka, result.ke, result.scale);
 });

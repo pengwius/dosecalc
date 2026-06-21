@@ -1,0 +1,207 @@
+#card-syringe {
+    grid-column: 1;
+    grid-row: 1;
+}
+#card-vial {
+    grid-column: 1;
+    grid-row: 2;
+}
+#card-dosage {
+    grid-column: 1;
+    grid-row: 3;
+}
+#card-result {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: sticky;
+    top: 24px;
+    gap: 16px;
+}
+#card-result h2 {
+    margin-top: 12px;
+    margin-bottom: 0;
+}
+
+.results {
+    text-align: center;
+    border: 3px dashed var(--pastel-petal);
+}
+.result-highlight {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 1.5rem;
+    margin: 0;
+    padding: 12px 24px;
+    background: var(--icy-blue);
+    color: #2b2533;
+    border-radius: 16px;
+    font-weight: bold;
+}
+.result-highlight span {
+    position: relative;
+    top: -2px;
+}
+.result-highlight strong {
+    font-size: 2.5rem;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+.vial-life {
+    font-size: 1.1rem;
+    margin: 0;
+    color: var(--pink-orchid);
+    font-weight: bold;
+    min-height: 1.5rem;
+}
+
+.syringe-visual-container {
+    width: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0;
+    rotate: -90deg;
+    height: 120%;
+    margin-top: -48px;
+}
+.syringe-wrapper {
+    display: flex;
+    align-items: center;
+    width: calc(100% - 60px);
+    max-width: 320px;
+    height: 220px;
+    position: relative;
+    margin-left: 0;
+    transform: translateX(12px) scale(1.4);
+}
+.syringe-barrel {
+    flex-grow: 1;
+    height: 40px;
+    border: 3px solid var(--text-color);
+    border-radius: 6px;
+    position: relative;
+    background: rgba(255, 255, 255, 0.3);
+    z-index: 2;
+}
+.syringe-liquid {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--pastel-petal), var(--blush-pop));
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 3px;
+}
+.syringe-scale {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.syringe-plunger {
+    width: 12px;
+    height: 100%;
+    background: #3a3a3a;
+    border-radius: 2px;
+    position: absolute;
+    top: 0;
+    z-index: 4;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.syringe-plunger::before {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    height: 6px;
+    background: var(--sky-blue);
+    border: 1px solid var(--text-color);
+    z-index: -1;
+}
+.syringe-plunger::after {
+    content: "";
+    position: absolute;
+    left: -86px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 30px;
+    background: var(--sky-blue);
+    border: 2px solid var(--text-color);
+    border-radius: 3px;
+}
+
+.syringe-needle {
+    width: 30px;
+    height: 4px;
+    background: var(--icy-blue);
+    border: 1px solid var(--text-color);
+    border-radius: 0 4px 4px 0;
+    z-index: 1;
+}
+
+.tick {
+    height: 6px;
+    width: 1.5px;
+    background-color: var(--text-color);
+    position: absolute;
+    top: 0;
+    opacity: 0.6;
+}
+.tick.major {
+    height: 10px;
+    opacity: 0.9;
+}
+.tick.major::after {
+    content: attr(data-value);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    font-weight: bold;
+    color: var(--text-color);
+    margin-bottom: 4px;
+}
+
+@media (max-width: 768px) {
+    #card-result {
+        grid-column: 1;
+        grid-row: auto;
+        position: static;
+    }
+    #card-result > h2 {
+        margin-top: 12px;
+    }
+    .vial-life {
+        margin-bottom: 16px;
+    }
+    .syringe-visual-container {
+        rotate: 0deg;
+        transform: translateX(14px);
+        margin-top: 0;
+        margin-bottom: -24px;
+    }
+    .syringe-wrapper {
+        width: 200px;
+        height: auto;
+        min-height: 60px;
+        margin-left: 0;
+        margin-bottom: 40px;
+        transform: scale(1.2);
+    }
+}

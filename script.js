@@ -1,4 +1,8 @@
-class State {
+import { ThemeManager } from "./modules/theme.js";
+import { DosageCalculator } from "./modules/dosageCalculator.js";
+import { SyringeRenderer } from "./modules/syringeRenderer.js";
+
+class CalculatorState {
   constructor() {
     this.syringeUnits = 40;
     this.syringeMl = 1;
@@ -12,18 +16,16 @@ class State {
     this.lastEditedDose = "amount";
   }
 
-  load() {
+  loadFromStorage() {
     try {
       const saved = localStorage.getItem("dosecalcState");
-      if (saved) {
-        Object.assign(this, JSON.parse(saved));
-      }
+      if (saved) Object.assign(this, JSON.parse(saved));
     } catch (e) {
       console.error("Could not load state", e);
     }
   }
 
-  save() {
+  saveToStorage() {
     try {
       localStorage.setItem("dosecalcState", JSON.stringify(this));
     } catch (e) {
@@ -32,109 +34,27 @@ class State {
   }
 }
 
-class Calculator {
-  static calculateVolumeFromAmount(amount, concAmount, concVol) {
-    if (!amount || !concAmount || !concVol) return 0;
-    return (amount / concAmount) * concVol;
-  }
-
-  static calculateAmountFromVolume(volume, concAmount, concVol) {
-    if (!volume || !concAmount || !concVol) return 0;
-    return (volume / concVol) * concAmount;
-  }
-
-  static calculateUnits(volume, syringeUnits, syringeMl) {
-    if (!volume || !syringeUnits || !syringeMl) return 0;
-    return volume * (syringeUnits / syringeMl);
-  }
-
-  static calculateVialLife(vialVol, doseVolume, freq) {
-    if (!vialVol || !doseVolume || !freq) return null;
-    const totalDoses = vialVol / doseVolume;
-    return Math.floor(totalDoses * freq);
-  }
-}
-
-class SyringeRenderer {
-  constructor(barrelEl, liquidEl, scaleEl, plungerEl) {
-    this.barrel = barrelEl;
-    this.liquid = liquidEl;
-    this.scale = scaleEl;
-    this.plunger = plungerEl;
-  }
-
-  render(units, maxUnits) {
-    maxUnits = Math.max(1, maxUnits);
-    const percentage = Math.min(100, Math.max(0, (units / maxUnits) * 100));
-
-    this.liquid.style.width = `${percentage}%`;
-
-    const plungerRightOffset = percentage;
-    this.plunger.style.left = `calc(${100 - plungerRightOffset}% - ${(100 - plungerRightOffset) / 100 * 12}px)`;
-
-    this.scale.innerHTML = "";
-
-    let majorStep = 10;
-    if (maxUnits <= 5) majorStep = 1;
-    else if (maxUnits <= 10) majorStep = 2;
-    else if (maxUnits <= 30) majorStep = 5;
-    else if (maxUnits <= 50) majorStep = 10;
-    else if (maxUnits <= 100) majorStep = 20;
-    else if (maxUnits <= 300) majorStep = 50;
-    else majorStep = 100;
-
-    let minorStep = majorStep / 5;
-
-    for (let val = 0; val <= maxUnits + 0.001; val += minorStep) {
-      const percent = 100 - (val / maxUnits) * 100;
-
-      const isMajor =
-        Math.abs(val % majorStep) < 0.001 ||
-        Math.abs((val % majorStep) - majorStep) < 0.001;
-
-      const tick = document.createElement("div");
-      tick.className = isMajor ? "tick major" : "tick";
-      tick.style.left = `${percent}%`;
-
-      tick.style.transform = "translateX(-50%)";
-
-      if (isMajor) {
-        tick.setAttribute("data-value", Math.round(val));
-      }
-
-      this.scale.appendChild(tick);
-    }
-  }
-}
-
-class ThemeManager {
-  constructor(btn) {
-    this.btn = btn;
-    this.isDark = localStorage.getItem("dosecalcTheme") === "dark";
-    this.applyTheme();
-    this.btn.addEventListener("click", () => {
-      this.isDark = !this.isDark;
-      this.applyTheme();
-    });
-  }
-  applyTheme() {
-    if (this.isDark)
-      document.documentElement.setAttribute("data-theme", "dark");
-    else document.documentElement.removeAttribute("data-theme");
-    this.btn.textContent = this.isDark ? "☀️" : "🌙";
-    localStorage.setItem("dosecalcTheme", this.isDark ? "dark" : "light");
-  }
-}
-
-class App {
+class CalculatorApp {
   constructor() {
-    this.state = new State();
-    this.state.load();
+    this.state = new CalculatorState();
+    this.state.loadFromStorage();
 
-    this.themeManager = new ThemeManager(
-      document.getElementById("themeToggle"),
+    new ThemeManager(document.getElementById("themeToggle"));
+
+    this.cacheElements();
+    this.syringeRenderer = new SyringeRenderer(
+      document.getElementById("syringeBarrel"),
+      document.getElementById("syringeLiquid"),
+      document.getElementById("syringeScale"),
+      document.getElementById("syringePlunger"),
     );
 
+    this.syncDomFromState();
+    this.bindEvents();
+    this.update();
+  }
+
+  cacheElements() {
     this.elements = {
       syringeUnits: document.getElementById("syringeUnits"),
       syringeMl: document.getElementById("syringeMl"),
@@ -152,17 +72,6 @@ class App {
       vialPreset: document.getElementById("vialPreset"),
       resetBtn: document.getElementById("resetBtn"),
     };
-
-    this.syringeRenderer = new SyringeRenderer(
-      document.getElementById("syringeBarrel"),
-      document.getElementById("syringeLiquid"),
-      document.getElementById("syringeScale"),
-      document.getElementById("syringePlunger"),
-    );
-
-    this.syncDomFromState();
-    this.bindEvents();
-    this.update();
   }
 
   syncDomFromState() {
@@ -176,121 +85,110 @@ class App {
     this.elements.doseAmount.value = this.state.doseAmount ?? "";
     this.elements.doseVolume.value = this.state.doseVolume ?? "";
     this.elements.doseUnitLabel.textContent = this.state.concUnit || "mg";
-
     this.updatePresets();
   }
 
   updatePresets() {
-    const sVal = `${this.state.syringeUnits},${this.state.syringeMl}`;
+    const syringeValue = `${this.state.syringeUnits},${this.state.syringeMl}`;
     if (
       Array.from(this.elements.syringePreset.options).some(
-        (o) => o.value === sVal,
+        (o) => o.value === syringeValue,
       )
     ) {
-      this.elements.syringePreset.value = sVal;
+      this.elements.syringePreset.value = syringeValue;
     } else {
       this.elements.syringePreset.value = "custom";
     }
 
-    const vVal = `${this.state.concAmount},${this.state.concUnit},${this.state.concVol}`;
+    const vialValue = `${this.state.concAmount},${this.state.concUnit},${this.state.concVol}`;
     if (
-      Array.from(this.elements.vialPreset.options).some((o) => o.value === vVal)
+      Array.from(this.elements.vialPreset.options).some(
+        (o) => o.value === vialValue,
+      )
     ) {
-      this.elements.vialPreset.value = vVal;
+      this.elements.vialPreset.value = vialValue;
     } else {
       this.elements.vialPreset.value = "custom";
     }
   }
 
   bindEvents() {
-    const updateState =
+    const createStateUpdater =
       (key, parser = parseFloat) =>
-      (e) => {
-        const val = parser(e.target.value);
-        this.state[key] = isNaN(val) ? null : val;
+      (event) => {
+        const value = parser(event.target.value);
+        this.state[key] = isNaN(value) ? null : value;
         this.update();
       };
 
     this.elements.syringeUnits.addEventListener(
       "input",
-      updateState("syringeUnits"),
+      createStateUpdater("syringeUnits"),
     );
-    this.elements.syringeMl.addEventListener("input", updateState("syringeMl"));
+    this.elements.syringeMl.addEventListener(
+      "input",
+      createStateUpdater("syringeMl"),
+    );
     this.elements.concAmount.addEventListener(
       "input",
-      updateState("concAmount"),
+      createStateUpdater("concAmount"),
     );
-    this.elements.concVol.addEventListener("input", updateState("concVol"));
-    this.elements.vialVol.addEventListener("input", updateState("vialVol"));
-    this.elements.freq.addEventListener("input", updateState("freq"));
+    this.elements.concVol.addEventListener(
+      "input",
+      createStateUpdater("concVol"),
+    );
+    this.elements.vialVol.addEventListener(
+      "input",
+      createStateUpdater("vialVol"),
+    );
+    this.elements.freq.addEventListener("input", createStateUpdater("freq"));
 
-    this.elements.syringePreset.addEventListener("change", (e) => {
-      if (e.target.value !== "custom") {
-        const [u, ml] = e.target.value.split(",");
-        this.state.syringeUnits = parseFloat(u);
+    this.elements.syringePreset.addEventListener("change", (event) => {
+      if (event.target.value !== "custom") {
+        const [units, ml] = event.target.value.split(",");
+        this.state.syringeUnits = parseFloat(units);
         this.state.syringeMl = parseFloat(ml);
         this.syncDomFromState();
         this.update();
       }
     });
 
-    this.elements.vialPreset.addEventListener("change", (e) => {
-      if (e.target.value !== "custom") {
-        const [amt, unit, vol] = e.target.value.split(",");
-        this.state.concAmount = parseFloat(amt);
+    this.elements.vialPreset.addEventListener("change", (event) => {
+      if (event.target.value !== "custom") {
+        const [amount, unit, volume] = event.target.value.split(",");
+        this.state.concAmount = parseFloat(amount);
         this.state.concUnit = unit;
-        this.state.concVol = parseFloat(vol);
+        this.state.concVol = parseFloat(volume);
         this.syncDomFromState();
         this.update();
       }
     });
 
-    this.elements.concUnit.addEventListener("change", (e) => {
-      this.state.concUnit = e.target.value;
+    this.elements.concUnit.addEventListener("change", (event) => {
+      this.state.concUnit = event.target.value;
       this.elements.doseUnitLabel.textContent = this.state.concUnit;
       this.update();
     });
 
-    this.elements.doseAmount.addEventListener("input", (e) => {
-      const val = parseFloat(e.target.value);
-      this.state.doseAmount = isNaN(val) ? null : val;
+    this.elements.doseAmount.addEventListener("input", (event) => {
+      const value = parseFloat(event.target.value);
+      this.state.doseAmount = isNaN(value) ? null : value;
       this.state.lastEditedDose = "amount";
       this.update();
     });
 
-    this.elements.doseVolume.addEventListener("input", (e) => {
-      const val = parseFloat(e.target.value);
-      this.state.doseVolume = isNaN(val) ? null : val;
+    this.elements.doseVolume.addEventListener("input", (event) => {
+      const value = parseFloat(event.target.value);
+      this.state.doseVolume = isNaN(value) ? null : value;
       this.state.lastEditedDose = "volume";
       this.update();
     });
 
     this.elements.resetBtn.addEventListener("click", () => {
-      this.state = new State();
+      this.state = new CalculatorState();
       this.syncDomFromState();
       this.update();
     });
-  }
-
-  showError(inputEl, message) {
-    this.clearError(inputEl);
-    if (!message) return;
-
-    inputEl.classList.add("input-error");
-
-    const errorDiv = document.createElement("div");
-    errorDiv.className = "input-error-message";
-    errorDiv.textContent = message;
-
-    inputEl.parentNode.appendChild(errorDiv);
-  }
-
-  clearError(inputEl) {
-    inputEl.classList.remove("input-error");
-    const existing = inputEl.parentNode.querySelector(".input-error-message");
-    if (existing) {
-      existing.remove();
-    }
   }
 
   validateInputs() {
@@ -314,10 +212,6 @@ class App {
     checkPositive(this.elements.concVol, this.state.concVol);
     checkPositive(this.elements.vialVol, this.state.vialVol, true);
     checkPositive(this.elements.freq, this.state.freq, true);
-
-    this.clearError(this.elements.doseAmount);
-    this.clearError(this.elements.doseVolume);
-
     checkPositive(this.elements.doseAmount, this.state.doseAmount, true);
     checkPositive(this.elements.doseVolume, this.state.doseVolume, true);
 
@@ -326,16 +220,17 @@ class App {
       const currentVolume = this.state.doseVolume;
 
       if (currentVolume > maxVolume) {
-        const maxAmount = maxVolume * (this.state.concAmount / this.state.concVol);
+        const maxAmount =
+          maxVolume * (this.state.concAmount / this.state.concVol);
         if (this.state.lastEditedDose === "amount") {
           this.showError(
             this.elements.doseAmount,
-            `Exceeds syringe capacity (max ${Number(maxAmount.toFixed(2))} ${this.state.concUnit || 'mg'})`
+            `Exceeds syringe capacity (max ${Number(maxAmount.toFixed(2))} ${this.state.concUnit || "mg"})`,
           );
         } else {
           this.showError(
             this.elements.doseVolume,
-            `Exceeds syringe capacity (max ${maxVolume} ml)`
+            `Exceeds syringe capacity (max ${maxVolume} ml)`,
           );
         }
         hasError = true;
@@ -345,39 +240,51 @@ class App {
     return hasError;
   }
 
+  showError(element, message) {
+    this.clearError(element);
+    if (!message) return;
+    element.classList.add("input-error");
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "input-error-message";
+    errorDiv.textContent = message;
+    element.parentNode.appendChild(errorDiv);
+  }
+
+  clearError(element) {
+    element.classList.remove("input-error");
+    const existing = element.parentNode.querySelector(".input-error-message");
+    if (existing) existing.remove();
+  }
+
   update() {
-    if (
-      this.state.lastEditedDose === "amount" &&
-      this.state.doseAmount !== null
-    ) {
-      this.state.doseVolume = Calculator.calculateVolumeFromAmount(
-        this.state.doseAmount,
-        this.state.concAmount,
-        this.state.concVol,
+    const { lastEditedDose, doseAmount, doseVolume, concAmount, concVol } =
+      this.state;
+
+    if (lastEditedDose === "amount" && doseAmount !== null) {
+      this.state.doseVolume = DosageCalculator.calculateVolumeFromAmount(
+        doseAmount,
+        concAmount,
+        concVol,
       );
       if (document.activeElement !== this.elements.doseVolume) {
-        this.elements.doseVolume.value = this.state.doseVolume !== null && !isNaN(this.state.doseVolume)
-          ? Number(this.state.doseVolume.toFixed(3))
-          : "";
+        this.elements.doseVolume.value =
+          this.state.doseVolume !== null && !isNaN(this.state.doseVolume)
+            ? Number(this.state.doseVolume.toFixed(3))
+            : "";
       }
-    } else if (
-      this.state.lastEditedDose === "volume" &&
-      this.state.doseVolume !== null
-    ) {
-      this.state.doseAmount = Calculator.calculateAmountFromVolume(
-        this.state.doseVolume,
-        this.state.concAmount,
-        this.state.concVol,
+    } else if (lastEditedDose === "volume" && doseVolume !== null) {
+      this.state.doseAmount = DosageCalculator.calculateAmountFromVolume(
+        doseVolume,
+        concAmount,
+        concVol,
       );
       if (document.activeElement !== this.elements.doseAmount) {
-        this.elements.doseAmount.value = this.state.doseAmount !== null && !isNaN(this.state.doseAmount)
-          ? Number(this.state.doseAmount.toFixed(3))
-          : "";
+        this.elements.doseAmount.value =
+          this.state.doseAmount !== null && !isNaN(this.state.doseAmount)
+            ? Number(this.state.doseAmount.toFixed(3))
+            : "";
       }
-    } else if (
-      this.state.doseAmount === null &&
-      this.state.doseVolume === null
-    ) {
+    } else if (doseAmount === null && doseVolume === null) {
       this.elements.doseAmount.value = "";
       this.elements.doseVolume.value = "";
     }
@@ -385,15 +292,15 @@ class App {
     const hasError = this.validateInputs();
 
     let units = 0;
-    let life = null;
+    let lifeDays = null;
 
     if (!hasError) {
-      units = Calculator.calculateUnits(
+      units = DosageCalculator.calculateSyringeUnits(
         this.state.doseVolume,
         this.state.syringeUnits,
         this.state.syringeMl,
       );
-      life = Calculator.calculateVialLife(
+      lifeDays = DosageCalculator.calculateVialLifeDays(
         this.state.vialVol,
         this.state.doseVolume,
         this.state.freq,
@@ -404,38 +311,21 @@ class App {
       ? Number(units.toFixed(2))
       : "0";
 
-    if (life) {
-      let timeString = `${life} days`;
-      const timeParts = [];
-
-      if (life >= 365) {
-        const years = (life / 365).toFixed(1);
-        timeParts.push(`~${years} years`);
-      } else if (life >= 30) {
-        const months = (life / 30.44).toFixed(1);
-        timeParts.push(`~${months} months`);
-      } else if (life >= 7) {
-        const weeks = (life / 7).toFixed(1);
-        timeParts.push(`~${weeks} weeks`);
+    if (lifeDays) {
+      let timeString = `${lifeDays} days`;
+      const durationString = DosageCalculator.formatDuration(lifeDays);
+      if (durationString !== `${lifeDays} days`) {
+        timeString += ` (${durationString})`;
       }
-
-      if (timeParts.length > 0) {
-        timeString += ` (${timeParts.join(" / ")})`;
-      }
-
       this.elements.vialLife.textContent = `This vial will last for about ${timeString}! ✨`;
     } else {
       this.elements.vialLife.textContent = "";
     }
 
     this.syringeRenderer.render(units || 0, this.state.syringeUnits || 40);
-
     this.updatePresets();
-
-    this.state.save();
+    this.state.saveToStorage();
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  new App();
-});
+document.addEventListener("DOMContentLoaded", () => new CalculatorApp());

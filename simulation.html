@@ -1,456 +1,384 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Blood Level Simulator ✨</title>
-    <link rel="icon" type="image/png" href="favicon.png" />
-    <link rel="stylesheet" href="style.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
-    <style>
-      .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 1000;
-        justify-content: center;
-        align-items: center;
-      }
-      .modal-content {
-        background: var(--card-bg);
-        padding: 24px;
-        border-radius: 24px;
-        max-width: 900px;
-        width: 95%;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: var(--shadow);
-        position: relative;
-      }
-      .modal-close {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        font-size: 1.5rem;
-        cursor: pointer;
-      }
-      .trip-chart-container {
-        width: 100%;
-        height: 300px;
-        margin: 16px 0;
-      }
-      .trip-dates-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 12px;
-        margin-top: 16px;
-      }
-      .trip-date-item {
-        padding: 8px;
-        background: var(--bg-color);
-        border-radius: 8px;
-        border: 1px solid var(--border-color);
-        font-size: 0.9rem;
-      }
-      .nav-links {
-        display: flex;
-        gap: 15px;
-        margin-bottom: 20px;
-      }
-      .nav-links a {
-        color: var(--pink-orchid);
-        text-decoration: none;
-        font-weight: bold;
-      }
-      .chart-container {
-        position: relative;
-        width: 100%;
-        height: auto;
-        min-height: 260px;
-        margin-top: 16px;
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <h1>Dosecalc 🌸</h1>
-      <a id="goToCalculator" href="index.html"></a>
-      <button id="themeToggle" aria-label="Toggle theme"></button>
-    </header>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Blood Level Simulator ✨</title>
+        <link rel="icon" type="image/png" href="favicon.png" />
+        <link rel="stylesheet" href="style.css" />
+        <script type="module" src="modules/components/AppHeader.js"></script>
+        <script type="module" src="modules/components/AppFooter.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
+    </head>
+    <body>
+        <app-header current-page="simulator"></app-header>
 
-    <main class="simulator-layout">
-      <section class="card results chart-card" id="simulator-result">
-        <div class="chart-header">
-          <h2>Blood Concentration</h2>
-          <div class="chart-controls">
-            <div class="control-group">
-              <label class="toggle">
-                <input type="checkbox" id="showE2" checked />
-                Show E2
-              </label>
-              <label class="toggle sub-toggle">
-                <input type="checkbox" id="showE2Target" />
-                Target
-              </label>
-            </div>
-            <div class="control-group">
-              <label class="toggle">
-                <input type="checkbox" id="showT" checked />
-                Show T
-              </label>
-              <label class="toggle sub-toggle">
-                <input type="checkbox" id="showTTarget" />
-                Target
-              </label>
-            </div>
-            <label class="toggle" id="splitChartsToggle">
-              <input type="checkbox" id="splitCharts" />
-              Split Charts
-            </label>
-          </div>
-        </div>
-        <div class="chart-container chart-grid" id="chartsContainer">
-          <canvas id="bloodChart"></canvas>
-        </div>
-      </section>
+        <main class="simulator-layout">
+            <section class="card results chart-card" id="simulator-result">
+                <div class="chart-header">
+                    <h2>Blood Concentration</h2>
+                    <div class="chart-controls">
+                        <div class="control-group">
+                            <label class="toggle">
+                                <input type="checkbox" id="showE2" checked />
+                                Show E2
+                            </label>
+                            <label class="toggle sub-toggle">
+                                <input type="checkbox" id="showE2Target" />
+                                Target
+                            </label>
+                        </div>
+                        <div class="control-group">
+                            <label class="toggle">
+                                <input type="checkbox" id="showT" checked />
+                                Show T
+                            </label>
+                            <label class="toggle sub-toggle">
+                                <input type="checkbox" id="showTTarget" />
+                                Target
+                            </label>
+                        </div>
+                        <label class="toggle" id="splitChartsToggle">
+                            <input type="checkbox" id="splitCharts" />
+                            Split Charts
+                        </label>
+                    </div>
+                </div>
+                <div class="chart-container chart-grid" id="chartsContainer">
+                    <canvas id="bloodChart"></canvas>
+                </div>
+            </section>
 
-      <section class="card">
-        <h2>Simulation Settings</h2>
-        <div class="input-row">
-          <div class="input-group">
-            <label for="biologicalSex">Assigned Sex</label>
-            <select id="biologicalSex">
-              <option value="amab">AMAB</option>
-              <option value="afab">AFAB</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label for="weightKg">Weight (kg)</label>
-            <input type="number" id="weightKg" value="70" min="1" step="0.1" />
-          </div>
-          <div class="input-group">
-            <label for="startDate">Start Date</label>
-            <input type="date" id="startDate" />
-          </div>
-          <div class="input-group">
-            <label for="cycleLength">Simulation Days</label>
-            <input
-              type="number"
-              id="cycleLength"
-              value="30"
-              min="7"
-              max="365"
-            />
-          </div>
-          <div class="input-group">
-            <label for="chartTimeUnit">Chart Unit</label>
-            <select id="chartTimeUnit">
-              <option value="days">Days</option>
-              <option value="hours">Hours</option>
-            </select>
-          </div>
-        </div>
-        <div class="input-row">
-          <label class="toggle"
-            ><input type="checkbox" id="steadyState" /> Start in Steady
-            State</label
-          >
-        </div>
-      </section>
+            <section class="card">
+                <h2>Simulation Settings</h2>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="biologicalSex">Assigned Sex</label>
+                        <select id="biologicalSex">
+                            <option value="amab">AMAB</option>
+                            <option value="afab">AFAB</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="weightKg">Weight (kg)</label>
+                        <input
+                            type="number"
+                            id="weightKg"
+                            value="70"
+                            min="1"
+                            step="0.1"
+                        />
+                    </div>
+                    <div class="input-group">
+                        <label for="startDate">Start Date</label>
+                        <input type="date" id="startDate" />
+                    </div>
+                    <div class="input-group">
+                        <label for="cycleLength">Simulation Days</label>
+                        <input
+                            type="number"
+                            id="cycleLength"
+                            value="30"
+                            min="7"
+                            max="365"
+                        />
+                    </div>
+                    <div class="input-group">
+                        <label for="chartTimeUnit">Chart Unit</label>
+                        <select id="chartTimeUnit">
+                            <option value="days">Days</option>
+                            <option value="hours">Hours</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-row">
+                    <label class="toggle"
+                        ><input type="checkbox" id="steadyState" /> Start in
+                        Steady State</label
+                    >
+                </div>
+            </section>
 
-      <section class="card" id="targetRangesCard">
-        <div class="card-header">
-          <h2>Target & Calibration</h2>
-          <label class="toggle">
-            <input type="checkbox" id="useCalibration" />
-            Calibrate by blood test
-          </label>
-        </div>
+            <section class="card" id="targetRangesCard">
+                <div class="card-header">
+                    <h2>Target & Calibration</h2>
+                    <label class="toggle">
+                        <input type="checkbox" id="useCalibration" />
+                        Calibrate by blood test
+                    </label>
+                </div>
 
-        <div
-          id="calibrationSection"
-          style="
-            display: none;
-            margin-bottom: 24px;
-            padding: 16px;
-            background: rgba(162, 210, 255, 0.1);
-            border-radius: 16px;
-            border: 1px dashed var(--sky-blue);
-          "
-        >
-          <div class="input-row">
-            <div class="input-group">
-              <label>Measured E2 Trough (pg/mL)</label>
-              <input
-                type="number"
-                id="e2Measured"
-                placeholder="e.g. 250"
-                min="0"
-                step="1"
-              />
-            </div>
-            <div class="input-group">
-              <label>Measured T Trough (ng/dL)</label>
-              <input
-                type="number"
-                id="tMeasured"
-                placeholder="e.g. 30"
-                min="0"
-                step="1"
-              />
-            </div>
-          </div>
-          <p
-            class="hint"
-            style="margin-top: 0; margin-bottom: 12px; font-style: italic"
-          >
-            Calibration is accurate only if these results are from a blood test
-            taken at the "trough" (just before your next dose) after your levels
-            have already reached a steady state.
-          </p>
-          <div
-            id="calibrationResults"
-            style="
-              font-size: 0.85rem;
-              font-weight: bold;
-              color: var(--sky-blue);
-              margin-top: 8px;
-            "
-          ></div>
-        </div>
+                <div
+                    id="calibrationSection"
+                    style="
+                        display: none;
+                        margin-bottom: 24px;
+                        padding: 16px;
+                        background: rgba(162, 210, 255, 0.1);
+                        border-radius: 16px;
+                        border: 1px dashed var(--sky-blue);
+                    "
+                >
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Measured E2 Trough (pg/mL)</label>
+                            <input
+                                type="number"
+                                id="e2Measured"
+                                placeholder="e.g. 250"
+                                min="0"
+                                step="1"
+                            />
+                        </div>
+                        <div class="input-group">
+                            <label>Measured T Trough (ng/dL)</label>
+                            <input
+                                type="number"
+                                id="tMeasured"
+                                placeholder="e.g. 30"
+                                min="0"
+                                step="1"
+                            />
+                        </div>
+                    </div>
+                    <p
+                        class="hint"
+                        style="
+                            margin-top: 0;
+                            margin-bottom: 12px;
+                            font-style: italic;
+                        "
+                    >
+                        Calibration is accurate only if these results are from a
+                        blood test taken at the "trough" (just before your next
+                        dose) after your levels have already reached a steady
+                        state.
+                    </p>
+                    <div
+                        id="calibrationResults"
+                        style="
+                            font-size: 0.85rem;
+                            font-weight: bold;
+                            color: var(--sky-blue);
+                            margin-top: 8px;
+                        "
+                    ></div>
+                </div>
 
-        <div class="input-row">
-          <div class="input-group">
-            <label>Estradiol Min (pg/mL)</label>
-            <input
-              type="number"
-              id="e2TargetMin"
-              value="150"
-              min="0"
-              step="1"
-            />
-          </div>
-          <div class="input-group">
-            <label>Estradiol Max (pg/mL)</label>
-            <input
-              type="number"
-              id="e2TargetMax"
-              value="400"
-              min="0"
-              step="1"
-            />
-          </div>
-          <div class="input-group">
-            <label>Testosterone Min (ng/dL)</label>
-            <input type="number" id="tTargetMin" value="10" min="0" step="1" />
-          </div>
-          <div class="input-group">
-            <label>Testosterone Max (ng/dL)</label>
-            <input type="number" id="tTargetMax" value="50" min="0" step="1" />
-          </div>
-        </div>
-      </section>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Estradiol Min (pg/mL)</label>
+                        <input
+                            type="number"
+                            id="e2TargetMin"
+                            value="150"
+                            min="0"
+                            step="1"
+                        />
+                    </div>
+                    <div class="input-group">
+                        <label>Estradiol Max (pg/mL)</label>
+                        <input
+                            type="number"
+                            id="e2TargetMax"
+                            value="400"
+                            min="0"
+                            step="1"
+                        />
+                    </div>
+                    <div class="input-group">
+                        <label>Testosterone Min (ng/dL)</label>
+                        <input
+                            type="number"
+                            id="tTargetMin"
+                            value="10"
+                            min="0"
+                            step="1"
+                        />
+                    </div>
+                    <div class="input-group">
+                        <label>Testosterone Max (ng/dL)</label>
+                        <input
+                            type="number"
+                            id="tTargetMax"
+                            value="50"
+                            min="0"
+                            step="1"
+                        />
+                    </div>
+                </div>
+            </section>
 
-      <section class="card" id="protocolsCard">
-        <div class="card-header">
-          <h2>Protocols</h2>
-          <button id="addProtocol" type="button">Add protocol</button>
-        </div>
-        <div id="protocolsList"></div>
-      </section>
+            <section class="card" id="protocolsCard">
+                <div class="card-header">
+                    <h2>Protocols</h2>
+                    <button id="addProtocol" type="button">Add protocol</button>
+                </div>
+                <div id="protocolsList"></div>
+            </section>
 
-      <section class="card" id="tripPlannerCard">
-        <div class="card-header">
-          <h2>Trip Planner</h2>
-        </div>
-        <p class="hint" style="margin-bottom: 16px">
-          Use this to plan your doses if you cannot take your meds with you on a
-          trip. The planner will suggest how to adjust your doses to keep your
-          levels stable.
-        </p>
+            <section class="card" id="tripPlannerCard">
+                <div class="card-header">
+                    <h2>Trip Planner</h2>
+                </div>
+                <p class="hint" style="margin-bottom: 16px">
+                    Use this to plan your doses if you cannot take your meds
+                    with you on a trip. The planner will suggest how to adjust
+                    your doses to keep your levels stable.
+                </p>
 
-        <div class="input-row">
-          <div class="input-group">
-            <label>Departure Date</label>
-            <input type="date" id="tripStart" />
-          </div>
-          <div class="input-group">
-            <label>Return Date</label>
-            <input type="date" id="tripEnd" />
-          </div>
-        </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Departure Date</label>
+                        <input type="date" id="tripStart" />
+                    </div>
+                    <div class="input-group">
+                        <label>Return Date</label>
+                        <input type="date" id="tripEnd" />
+                    </div>
+                </div>
 
-        <div class="input-row">
-          <div class="input-group">
-            <label>Target Protocol</label>
-            <select id="tripProtocolSelect"></select>
-          </div>
-          <div class="input-group">
-            <label>Adjustment Method</label>
-            <select id="tripMode">
-              <option value="single">Single larger dose before trip</option>
-              <option value="sandwich">Extra before and after trip</option>
-            </select>
-          </div>
-        </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Target Protocol</label>
+                        <select id="tripProtocolSelect"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>Adjustment Method</label>
+                        <select id="tripMode">
+                            <option value="single">
+                                Single larger dose before trip
+                            </option>
+                            <option value="sandwich">
+                                Extra before and after trip
+                            </option>
+                        </select>
+                    </div>
+                </div>
 
-        <div
-          id="tripPlanResult"
-          style="
-            display: none;
-            padding: 16px;
-            background: rgba(205, 180, 219, 0.2);
-            border-radius: 16px;
-            border: 1px solid var(--pink-orchid);
-            margin-bottom: 16px;
-          "
-        >
-          <h3
-            style="
-              font-size: 1rem;
-              color: var(--text-color);
-              margin-bottom: 8px;
-            "
-          >
-            Suggested Adjustment:
-          </h3>
-          <div
-            id="tripSuggestionText"
-            style="font-weight: bold; margin-bottom: 12px"
-          ></div>
-          <div style="display: flex; gap: 12px; flex-wrap: wrap">
+                <div
+                    id="tripPlanResult"
+                    style="
+                        display: none;
+                        padding: 16px;
+                        background: rgba(205, 180, 219, 0.2);
+                        border-radius: 16px;
+                        border: 1px solid var(--pink-orchid);
+                        margin-bottom: 16px;
+                    "
+                >
+                    <h3
+                        style="
+                            font-size: 1rem;
+                            color: var(--text-color);
+                            margin-bottom: 8px;
+                        "
+                    >
+                        Suggested Adjustment:
+                    </h3>
+                    <div
+                        id="tripSuggestionText"
+                        style="font-weight: bold; margin-bottom: 12px"
+                    ></div>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap">
+                        <button
+                            id="applyTripPlan"
+                            style="
+                                font-size: 0.9rem;
+                                padding: 8px 16px;
+                                width: auto;
+                            "
+                        >
+                            Apply to Schedule
+                        </button>
+                        <button
+                            id="revertTripPlan"
+                            style="
+                                display: none;
+                                font-size: 0.9rem;
+                                padding: 8px 16px;
+                                width: auto;
+                                background: var(--bg-color);
+                                border-style: dashed;
+                            "
+                        >
+                            Undo Apply
+                        </button>
+                    </div>
+                </div>
+
+                <button
+                    id="calculateTrip"
+                    style="
+                        width: 100%;
+                        background: var(--sky-blue);
+                        color: #fff;
+                        border: none;
+                        font-weight: bold;
+                    "
+                >
+                    Calculate Trip Adjustment
+                </button>
+            </section>
+
             <button
-              id="applyTripPlan"
-              style="font-size: 0.9rem; padding: 8px 16px; width: auto"
+                id="resetSimulation"
+                aria-label="Reset defaults"
+                style="width: 100%; padding: 16px; font-weight: bold"
             >
-              Apply to Schedule
+                🔄 Reset Simulator
             </button>
-            <button
-              id="revertTripPlan"
-              style="
-                display: none;
-                font-size: 0.9rem;
-                padding: 8px 16px;
-                width: auto;
-                background: var(--bg-color);
-                border-style: dashed;
-              "
-            >
-              Undo Apply
-            </button>
-          </div>
-        </div>
 
-        <button
-          id="calculateTrip"
-          style="
-            width: 100%;
-            background: var(--sky-blue);
-            color: #fff;
-            border: none;
-            font-weight: bold;
-          "
-        >
-          Calculate Trip Adjustment
-        </button>
-      </section>
-
-      <button
-        id="resetSimulation"
-        aria-label="Reset defaults"
-        style="width: 100%; padding: 16px; font-weight: bold"
-      >
-        🔄 Reset Simulator
-      </button>
-
-      <div id="tripModal" class="modal">
-        <div class="modal-content">
-          <span class="modal-close" id="closeTripModal">&times;</span>
-          <h2>Trip Adjustment Plan</h2>
-          <div
-            id="tripModalSuggestion"
-            style="font-weight: bold; margin-bottom: 16px"
-          ></div>
-          <div
-            class="chart-controls"
-            style="margin-bottom: 16px; justify-content: flex-start"
-          >
-            <label class="toggle">
-              <input type="checkbox" id="showModalE2Target" />
-              Show E2 Target
-            </label>
-            <label class="toggle">
-              <input type="checkbox" id="showModalTTarget" />
-              Show T Target
-            </label>
-          </div>
-          <div class="chart-container" style="margin-bottom: 24px">
-            <div class="chart-block">
-              <canvas id="tripChart"></canvas>
+            <div id="tripModal" class="modal">
+                <div class="modal-content">
+                    <span class="modal-close" id="closeTripModal">&times;</span>
+                    <h2>Trip Adjustment Plan</h2>
+                    <div
+                        id="tripModalSuggestion"
+                        style="font-weight: bold; margin-bottom: 16px"
+                    ></div>
+                    <div
+                        class="chart-controls"
+                        style="margin-bottom: 16px; justify-content: flex-start"
+                    >
+                        <label class="toggle">
+                            <input type="checkbox" id="showModalE2Target" />
+                            Show E2 Target
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="showModalTTarget" />
+                            Show T Target
+                        </label>
+                    </div>
+                    <div class="chart-container" style="margin-bottom: 24px">
+                        <div class="chart-block">
+                            <canvas id="tripChart"></canvas>
+                        </div>
+                    </div>
+                    <h3>Injection Schedule Changes:</h3>
+                    <div id="tripDatesList" class="trip-dates-list"></div>
+                    <div style="margin-top: 24px; display: flex; gap: 16px">
+                        <button
+                            id="modalApplyTrip"
+                            style="
+                                background: var(--sky-blue);
+                                color: #fff;
+                                flex: 1;
+                            "
+                        >
+                            Apply to Schedule
+                        </button>
+                        <button id="modalCloseBtn" style="flex: 1">
+                            Close
+                        </button>
+                    </div>
+                </div>
             </div>
-          </div>
-          <h3>Injection Schedule Changes:</h3>
-          <div id="tripDatesList" class="trip-dates-list"></div>
-          <div style="margin-top: 24px; display: flex; gap: 16px">
-            <button
-              id="modalApplyTrip"
-              style="background: var(--sky-blue); color: #fff; flex: 1"
-            >
-              Apply to Schedule
-            </button>
-            <button id="modalCloseBtn" style="flex: 1">Close</button>
-          </div>
-        </div>
-      </div>
-    </main>
+        </main>
 
-    <footer>
-      <div class="footer-content">
-        <p>
-          Made by
-          <a
-            href="https://github.com/pengwius"
-            target="_blank"
-            rel="noopener noreferrer"
-            >pengwius</a
-          >
-          with ❤️
-        </p>
-        <p style="margin-top: -4px">
-          <a
-            href="https://github.com/pengwius/dosecalc"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub Repository
-          </a>
-        </p>
-        <div class="attribution">
-          Icons made by
-          <a
-            href="https://www.flaticon.com/authors/candy-design"
-            title="Candy Design"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Candy Design</a
-          >
-          from
-          <a
-            href="https://www.flaticon.com/"
-            title="Flaticon"
-            target="_blank"
-            rel="noopener noreferrer"
-            >www.flaticon.com</a
-          >
-        </div>
-      </div>
-    </footer>
+        <app-footer></app-footer>
 
-    <script src="simulation.js"></script>
-  </body>
+        <script type="module" src="simulation.js"></script>
+    </body>
 </html>

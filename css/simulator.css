@@ -1,0 +1,236 @@
+.simulator-layout {
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+.chart-card {
+    border: 3px dashed var(--pastel-petal);
+}
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.chart-controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-color);
+    padding: 4px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 4px;
+}
+.sub-toggle {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    border-left: 1px solid var(--border-color);
+    padding-left: 8px;
+    margin-top: 4px;
+}
+#splitChartsToggle {
+    margin-top: 0;
+    margin-bottom: 6px;
+}
+
+.chart-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+}
+.chart-block {
+    background: var(--bg-color);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100px;
+}
+.chart-scroll-wrapper {
+    flex: 1;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    margin-top: 8px;
+}
+.chart-inner-wrapper {
+    height: 100%;
+    min-width: 100%;
+}
+.chart-block canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+.chart-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+#protocolsList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.protocol-card {
+    border: 2px solid var(--border-color);
+    border-radius: 20px;
+    padding: 16px;
+    background: var(--bg-color);
+}
+.protocol-card--custom .custom-schedule {
+    display: block;
+}
+.protocol-card--custom .regular-schedule-options {
+    display: none;
+}
+.protocol-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.protocol-header h3 {
+    font-size: 1.1rem;
+    color: var(--sky-blue);
+}
+.protocol-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.ghost-button {
+    background: transparent;
+    border: 2px dashed var(--border-color);
+    color: var(--text-color);
+    padding: 6px 12px;
+    font-size: 0.9rem;
+}
+.custom-schedule {
+    display: none;
+    margin-top: 12px;
+}
+.custom-schedule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.custom-dose-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+.modal-content {
+    background: var(--card-bg);
+    padding: 32px;
+    border-radius: 32px;
+    max-width: 1000px;
+    width: 100%;
+    max-height: 95vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    position: relative;
+    border: 2px solid var(--border-color);
+}
+.modal-close {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    font-size: 2rem;
+    color: var(--text-color);
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+.modal-close:hover {
+    opacity: 1;
+}
+#tripDatesList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+.trip-date-item {
+    padding: 8px;
+    background: var(--bg-color);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    font-size: 0.9rem;
+}
+#tripSuggestionText {
+    color: var(--sky-blue);
+    border-left: 4px solid var(--sky-blue);
+    padding-left: 12px;
+    line-height: 1.4;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 260px;
+    margin-top: 16px;
+}
+
+@media (max-width: 768px) {
+    .simulator-layout {
+        gap: 12px;
+    }
+    .chart-block {
+        padding: 16px;
+        min-height: 300px;
+    }
+    .chart-inner-wrapper {
+        width: 700px;
+    }
+    .chart-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .protocol-card {
+        padding: 12px;
+        border-radius: 14px;
+    }
+}
